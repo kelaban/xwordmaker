@@ -1,0 +1,27 @@
+.Grid-container {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+
+.Grid-item {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.8);
+  font-size: 1em;
+  text-align: center;
+  overflow: hidden;
+}
+
+.Grid-item-blocked {
+  background-color: black;
+}
+
+.Grid-item-selected {
+  border: 1px solid red;
+  background-color: blue;
+}
+
+.Grid-item-highlight {
+  background-color: yellow;
+}

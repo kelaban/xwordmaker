@@ -1,70 +1,10 @@
 import React, { Component, useState, useEffect } from 'react';
 import logo from './logo.svg';
 import './App.css';
-
-const gg = [
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-  ["","","","","","","","","","","","","","","",""],
-]
+import Grid from './Grid'
 
 const DIRECTION_ACROSS = "ACROSS"
 const DIRECTION_DOWN = "DOWN"
-
-const Grid = ({width, height, grid, selected, currentWord, onClick}) => {
-
-  // go from 0 -> width*height and map to a block in the view
-  const gridItems = [...Array(width*height).keys()]
-      .map(i => {
-        const row = Math.floor(i/width)
-        const column = Math.floor(i%width)
-        const val = grid[row][column]
-        const isSelected = selected && selected.row === row && selected.column === column
-        let classNames = ["Grid-item"]
-        if (val === "!") {
-          classNames.push("Grid-item-blocked")
-        }
-        if (isSelected) {
-          classNames.push("Grid-item-selected")
-        } else if (currentWord.coordinates.some(i => i[0] === row && i[1] === column)) {
-          classNames.push("Grid-item-highlight")
-        }
-        const cn = classNames.join(" ")
-        const style = {
-          fontSize: `${(1/val.length)*2}em`
-        }
-
-        return (
-          <div key={i} style={style} className={cn} onClick={() => onClick({row, column})}>{val}</div>
-        )
-      })
-
-  return (
-    <div
-      style={{
-        gridTemplateColumns: `repeat(${width}, 1fr)`,
-        gridTemplateRows: `repeat(${width}, 1fr)`
-      }}
-      className="Grid-container"
-    >
-      {gridItems}
-    </div>
-  )
-}
-
 
 const GridStats = ({grid}) => {
   // get {A: 0 ... Z:0)
@@ -216,44 +156,38 @@ function App() {
   }
 
   useEffect(() => {
-    if (selected && currentWord.direction === DIRECTION_ACROSS) {
-      let start = selected.column;
-      let end = selected.column;
-      while(start>0 && grid[selected.row][start] !== "!") start--;
-      while(end<width && grid[selected.row][end] !== "!") end++;
-      if (grid[selected.row][start] === "!") start++;
+    if (selected) {
+      const valFor = (x) => currentWord.direction === DIRECTION_ACROSS ? grid[selected.row][x] :grid[x][selected.column]
+      const coordinatesFor = (x) => currentWord.direction === DIRECTION_ACROSS ? [selected.row, x] : [x, selected.column]
+      const isEnd = (end) => currentWord.direction === DIRECTION_ACROSS ? end < width : end < height
+
+      let start = currentWord.direction === DIRECTION_ACROSS ? selected.column : selected.row;
+      let end = start
+
+      // Find beginning
+      // Then find end of the word
+      // When convert those values into an string and convert blanks to . for word search
+      // also compile list of coordinates for grid highlighting
+      //  finally set the new state
+      while(start>0 && valFor(start) !== "!") start--;
+      while(isEnd(end) && valFor(end) !== "!") end++;
+      if (valFor(start) === "!") start++;
+
       let word = ""
       let coordinates = []
+
       for(let i=start; i<end; ++i) {
-        let v = grid[selected.row][i]
+        let v = valFor(i)
         if (v === "") v = ".";
         word += v
-        coordinates.push([selected.row, i])
+        coordinates.push(coordinatesFor(i))
       }
 
       setCurrentWord(Object.assign({}, currentWord, {
         word,
         coordinates
       }))
-    } else if (selected && currentWord.direction === DIRECTION_DOWN) {
-      let start = selected.row;
-      let end = selected.row;
-      while(start>0 && grid[start][selected.column] !== "!") start--;
-      while(end<height && grid[end][selected.column] !== "!") end++;
-      if (grid[start][selected.column] === "!") start++;
-      let word = ""
-      let coordinates = []
-      for(let i=start; i<end; ++i) {
-        let v = grid[i][selected.column]
-        if (v === "") v = ".";
-        word += v
-        coordinates.push([i, selected.column])
-      }
 
-      setCurrentWord(Object.assign({}, currentWord, {
-        word,
-        coordinates
-      }))
     }
   }, [selected, currentWord.direction])
 
