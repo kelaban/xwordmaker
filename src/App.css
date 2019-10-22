@@ -1,22 +1,40 @@
+body {
+  overflow: hidden;
+  font-family: Helvetica; font-size: 14px; font-style: normal; font-variant: normal; font-weight: 100;
+}
+
+
 .App {
+  margin-left: 20px;
+  width: 75vmin;
+  height: 75vmin;
+  padding-top: 20px;
+}
+
+.Grid-container {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+
+.Grid-item {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.8);
+  font-size: 1em;
   text-align: center;
+  overflow: hidden;
 }
 
-.App-logo {
-  height: 40vmin;
+.Grid-item-blocked {
+  background-color: black;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.Grid-item-selected {
+  border: 1px solid red;
+  background-color: blue;
 }
 
-.App-link {
-  color: #09d3ac;
+.Grid-item-highlight {
+  background-color: yellow;
 }
