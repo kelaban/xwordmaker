@@ -18,10 +18,9 @@
 }
 
 .Grid-item-selected {
-  border: 1px solid red;
-  background-color: blue;
+  background-color: rgba(152, 207, 254, 0.8)
 }
 
 .Grid-item-highlight {
-  background-color: yellow;
+  background-color: rgba(524, 212, 10, 0.8)
 }
