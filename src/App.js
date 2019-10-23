@@ -1,7 +1,7 @@
 import React, { Component, useState, useEffect } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import Grid from './Grid'
+import XGrid from './XGrid'
 
 const DIRECTION_ACROSS = "ACROSS"
 const DIRECTION_DOWN = "DOWN"
@@ -244,7 +244,7 @@ function App() {
 
   return (
     <div className="App">
-      <Grid width={width} height={height} grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} />
+      <XGrid width={width} height={height} grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} />
       <GridStats grid={grid} />
       <WordList currentWord={currentWord}/>
     </div>
