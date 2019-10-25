@@ -10,6 +10,8 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
 
 
 const DIRECTION_ACROSS = "ACROSS"
@@ -33,7 +35,8 @@ const useStyles = makeStyles(theme => ({
     float: "left"
   },
   scroll: {
-    overflow: "scroll"
+    overflow: "scroll",
+    maxHeight: "calc(100vh - 100px)",
   }
 }));
 
@@ -107,12 +110,21 @@ const WordList = ({currentWord}) => {
     setFiltered(words.filter(w => w.match(query)))
   }, [currentWord.word])
 
+  const max = 200
+
   return <div>
-    <br/>
-    Words: {filtered.length}
-    <br/>
-    Filtered:
-    {JSON.stringify(filtered, null, 2)}
+    Words: {filtered.length > max ? `showing ${max}/` : ''}{filtered.length}
+    <List>
+      {filtered.slice(0,200).map(w =>
+          <ListItem
+            key={w}
+            component="a"
+            target="_blank"
+            href={`https://www.anagrammer.com/crossword-clues/${w}`}>
+            {w}
+          </ListItem>
+       )}
+    </List>
   </div>
 }
 
@@ -176,9 +188,81 @@ class Movement {
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
-  if (value !== index) return null;
+  let style = {}
+  if (value !== index) {
+    style['display'] = "none"
+  }
 
-  return children
+  return <div style={style}>
+    {children}
+  </div>
+}
+
+
+function KeyPressHandler(props) {
+  const {
+    width,
+    height,
+    selected,
+    setSelected,
+    setCurrentWord,
+    currentWord,
+    grid,
+    updateGrid
+  } = props
+
+  const handleKeyPressed = (e) => {
+    if (selected) {
+      const movement = new Movement({width, height, setSelected, currentWord, selected})
+
+      if (e.key === "Backspace") {
+        const old = grid[selected.row][selected.column]
+        if (old === '!') {
+          grid[height - selected.row - 1][width - selected.column - 1] = ''
+        }
+        grid[selected.row][selected.column] = ""
+
+        movement.moveBack()
+        updateGrid([...grid])
+
+      } else if(e.key.match(/^[a-z]$/i)) {
+        let k = e.key.toUpperCase()
+        if (e.ctrlKey) {
+          grid[selected.row][selected.column] += k
+        } else {
+          grid[selected.row][selected.column] = k
+          movement.moveForward()
+        }
+        updateGrid([...grid])
+      } else if(e.key === '!') {
+        grid[selected.row][selected.column] = e.key
+        grid[height - selected.row - 1][width - selected.column - 1] = e.key
+        movement.moveForward()
+        updateGrid([...grid])
+      } else if (e.key === ' ') {
+        setCurrentWord(Object.assign({}, currentWord, {
+          direction: currentWord.direction === DIRECTION_ACROSS ? DIRECTION_DOWN : DIRECTION_ACROSS
+        }))
+      } else if(e.key == 'ArrowRight') {
+        movement.right()
+      } else if(e.key == 'ArrowLeft') {
+        movement.left()
+      } else if(e.key == 'ArrowUp') {
+        movement.up()
+      } else if(e.key == 'ArrowDown') {
+        movement.down()
+      }
+    }
+  }
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPressed)
+    return () => {
+      document.removeEventListener('keydown', handleKeyPressed)
+    }
+  })
+
+  return <React.Fragment></React.Fragment>
 }
 
 function App() {
@@ -232,62 +316,24 @@ function App() {
     }
   }, [selected, currentWord.direction])
 
-  const handleKeyPressed = (e) => {
-    if (selected) {
-      const movement = new Movement({width, height, setSelected, currentWord, selected})
-
-      if (e.key === "Backspace") {
-        const old = grid[selected.row][selected.column]
-        if (old === '!') {
-          grid[height - selected.row - 1][width - selected.column - 1] = ''
-        }
-        grid[selected.row][selected.column] = ""
-
-        movement.moveBack()
-        updateGrid([...grid])
-
-      } else if(e.key.match(/^[a-z]$/i)) {
-        let k = e.key.toUpperCase()
-        if (e.ctrlKey) {
-          grid[selected.row][selected.column] += k
-        } else {
-          grid[selected.row][selected.column] = k
-          movement.moveForward()
-        }
-        updateGrid([...grid])
-      } else if(e.key === '!') {
-        grid[selected.row][selected.column] = e.key
-        grid[height - selected.row - 1][width - selected.column - 1] = e.key
-        movement.moveForward()
-        updateGrid([...grid])
-      } else if (e.key === ' ') {
-        setCurrentWord(Object.assign({}, currentWord, {
-          direction: currentWord.direction === DIRECTION_ACROSS ? DIRECTION_DOWN : DIRECTION_ACROSS
-        }))
-      } else if(e.key == 'ArrowRight') {
-        movement.right()
-      } else if(e.key == 'ArrowLeft') {
-        movement.left()
-      } else if(e.key == 'ArrowUp') {
-        movement.up()
-      } else if(e.key == 'ArrowDown') {
-        movement.down()
-      }
-    }
-  }
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyPressed)
-    return () => {
-      document.removeEventListener('keydown', handleKeyPressed)
-    }
-  })
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
 
+  const kphProps = {
+    width,
+    height,
+    selected,
+    setSelected,
+    setCurrentWord,
+    currentWord,
+    grid,
+    updateGrid
+  }
+
   return (
     <div className="App">
+      <KeyPressHandler {...kphProps} />
       <Container className={classes.container}>
         <Grid container spacing={0}>
           <Grid item xs>
@@ -297,17 +343,17 @@ function App() {
           </Grid>
           <Grid item xs={6}>
             <Tabs value={tabValue} onChange={(e,nv) => handleTabChanged(nv)}>
-              <Tab label="Grid Stats"/>
               <Tab label="Word List"/>
+              <Tab label="Grid Stats"/>
             </Tabs>
             <TabPanel value={tabValue} index={0}>
             <Paper className={clsScrollPaper} >
-              <GridStats grid={grid} />
+              <WordList currentWord={currentWord}/>
             </Paper>
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
               <Paper className={clsScrollPaper} >
-                <WordList currentWord={currentWord}/>
+                <GridStats grid={grid} />
               </Paper>
             </TabPanel>
           </Grid>
