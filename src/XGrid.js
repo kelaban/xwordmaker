@@ -1,5 +1,5 @@
 import React from 'react';
-import './Grid.css';
+import './XGrid.css';
 
 export default function Grid({width, height, grid, selected, currentWord, onClick}) {
   // go from 0 -> width*height and map to a block in the view
@@ -24,7 +24,7 @@ export default function Grid({width, height, grid, selected, currentWord, onClic
         }
 
         return (
-          <div key={i} style={style} className={cn} onClick={() => onClick({row, column})}>{val}</div>
+          <div key={i} className={cn} onClick={() => onClick({row, column})}><span style={style}>{val}</span></div>
         )
       })
 
