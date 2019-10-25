@@ -265,12 +265,32 @@ function KeyPressHandler(props) {
   return <React.Fragment></React.Fragment>
 }
 
+function calcNumbers(grid) {
+  let out = grid.map(r => r.map(c => "")); // clone grid
+  let num = 1;
+  for (let i=0; i<grid.length; ++i){
+    for (let j=0; j<grid[i].length; ++j) {
+      if (grid[i][j] === "!") continue;
+
+      if((i === 0 || grid[i-1][j] === "!") && (i !== grid.length || grid[i+1][j] !== '!')) {
+        out[i][j] = num++;
+      } else if((j === 0 || grid[i][j-1] === "!") && (j !== grid[i].length || grid[i][j+1] === '!')) {
+        out[i][j] = num++;
+      }
+    }
+  }
+
+  return out;
+}
+
 function App() {
   const classes = useStyles()
   const [tabValue, handleTabChanged] = useState(0)
   const [selected, setSelected] = useState()
   const [currentWord, setCurrentWord] = useState({word: "", direction: DIRECTION_ACROSS, coordinates: []})
   const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid") || gr))
+  const [clueNumbers, setClueNumbers] = useState(calcNumbers(grid));
+
 
   const width = grid[0].length
   const height = grid.length
@@ -279,6 +299,8 @@ function App() {
     localStorage.setItem("grid", JSON.stringify(nextGrid))
     updateGridState(nextGrid)
   }
+
+  useEffect(() => setClueNumbers(calcNumbers(grid)), [grid])
 
   useEffect(() => {
     if (selected) {
@@ -338,7 +360,7 @@ function App() {
         <Grid container spacing={0}>
           <Grid item xs>
             <Paper className={clsGridPaper} >
-              <XGrid width={width} height={height} grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} />
+              <XGrid width={width} height={height} grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} clueNumbers={clueNumbers}/>
             </Paper>
           </Grid>
           <Grid item xs={6}>

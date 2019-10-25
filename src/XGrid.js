@@ -1,7 +1,7 @@
 import React from 'react';
 import './XGrid.css';
 
-export default function Grid({width, height, grid, selected, currentWord, onClick}) {
+export default function Grid({width, height, grid, selected, currentWord, clueNumbers, onClick}) {
   // go from 0 -> width*height and map to a block in the view
   const gridItems = [...Array(width*height).keys()]
       .map(i => {
@@ -20,11 +20,14 @@ export default function Grid({width, height, grid, selected, currentWord, onClic
         }
         const cn = classNames.join(" ")
         const style = {
-          fontSize: `${(1/val.length)*2}em`
+          fontSize: `${(1/(val.length))*1.1}em`
         }
 
         return (
-          <div key={i} className={cn} onClick={() => onClick({row, column})}><span style={style}>{val}</span></div>
+          <div key={i} className={cn} onClick={() => onClick({row, column})}>
+            <span className="Grid-number">{clueNumbers[row][column]}</span>
+            <span style={style}>{val}</span>
+          </div>
         )
       })
 

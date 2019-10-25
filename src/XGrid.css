@@ -5,6 +5,14 @@
 }
 
 
+.Grid-number {
+  top: 1px;
+  left: 1px;
+  font-size: 9px;
+  position: absolute;
+  font-weight: bold;
+}
+
 .Grid-item {
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(0, 0, 0, 0.8);
@@ -16,6 +24,8 @@
   justify-content: center;
   list-style: none;
   margin-left: 0;
+
+  position: relative;
 }
 
 .Grid-item-blocked {
