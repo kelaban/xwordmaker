@@ -97,7 +97,7 @@ const WordList = ({currentWord}) => {
   const [filtered, setFiltered] = useState([])
 
   useEffect(() => {
-    fetch("/wordlist/wordlist.txt")
+    fetch(`${process.env.PUBLIC_URL}/wordlist/wordlist.txt`)
       .then(resp => resp.text())
       .then(text =>
           text.split("\n")
