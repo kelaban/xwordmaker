@@ -1,10 +1,41 @@
 import React, { Component, useState, useEffect } from 'react';
+import clsx from 'clsx';
 import logo from './logo.svg';
 import './App.css';
 import XGrid from './XGrid'
 
+import { makeStyles } from '@material-ui/core/styles';
+import Paper from '@material-ui/core/Paper';
+import Container from '@material-ui/core/Container';
+import Grid from '@material-ui/core/Grid';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
+
+
 const DIRECTION_ACROSS = "ACROSS"
 const DIRECTION_DOWN = "DOWN"
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    display: "flex",
+  },
+  container: {
+    paddingLeft: 12,
+    paddingRight: 12,
+  },
+  paper: {
+    padding: 10,
+  },
+  gridPaper: {
+    width: "75vmin",
+    height: "75vmin",
+    //clear the width
+    float: "left"
+  },
+  scroll: {
+    overflow: "scroll"
+  }
+}));
 
 const GridStats = ({grid}) => {
   // get {A: 0 ... Z:0)
@@ -142,7 +173,17 @@ class Movement {
   }
 }
 
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  if (value !== index) return null;
+
+  return children
+}
+
 function App() {
+  const classes = useStyles()
+  const [tabValue, handleTabChanged] = useState(0)
   const [selected, setSelected] = useState()
   const [currentWord, setCurrentWord] = useState({word: "", direction: DIRECTION_ACROSS, coordinates: []})
   const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid") || gr))
@@ -242,11 +283,36 @@ function App() {
     }
   })
 
+  const clsGridPaper = clsx(classes.paper, classes.gridPaper)
+  const clsScrollPaper = clsx(classes.paper, classes.scroll)
+
   return (
     <div className="App">
-      <XGrid width={width} height={height} grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} />
-      <GridStats grid={grid} />
-      <WordList currentWord={currentWord}/>
+      <Container className={classes.container}>
+        <Grid container spacing={0}>
+          <Grid item xs>
+            <Paper className={clsGridPaper} >
+              <XGrid width={width} height={height} grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} />
+            </Paper>
+          </Grid>
+          <Grid item xs={6}>
+            <Tabs value={tabValue} onChange={(e,nv) => handleTabChanged(nv)}>
+              <Tab label="Grid Stats"/>
+              <Tab label="Word List"/>
+            </Tabs>
+            <TabPanel value={tabValue} index={0}>
+            <Paper className={clsScrollPaper} >
+              <GridStats grid={grid} />
+            </Paper>
+            </TabPanel>
+            <TabPanel value={tabValue} index={1}>
+              <Paper className={clsScrollPaper} >
+                <WordList currentWord={currentWord}/>
+              </Paper>
+            </TabPanel>
+          </Grid>
+        </Grid>
+      </Container>
     </div>
   );
 }
