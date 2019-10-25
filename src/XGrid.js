@@ -1,7 +1,9 @@
 import React from 'react';
 import './XGrid.css';
 
-export default function Grid({width, height, grid, selected, currentWord, clueNumbers, onClick}) {
+export default function Grid({grid, selected, currentWord, clueNumbers, onClick}) {
+  const width = grid[0].length
+  const height = grid.length
   // go from 0 -> width*height and map to a block in the view
   const gridItems = [...Array(width*height).keys()]
       .map(i => {
