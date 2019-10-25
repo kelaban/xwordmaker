@@ -3,6 +3,13 @@ import clsx from 'clsx';
 import logo from './logo.svg';
 import './App.css';
 import XGrid from './XGrid'
+import {
+  isDirectionAcross,
+  isBlockedSquare,
+  DIRECTION_ACROSS,
+  DIRECTION_DOWN,
+  BLOCKED_SQUARE
+}  from './constants';
 
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
@@ -14,8 +21,9 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 
 
-const DIRECTION_ACROSS = "ACROSS"
-const DIRECTION_DOWN = "DOWN"
+
+const coord2dTo1d = (grid, row, col) => (grid.size.cols*row)+col
+const valFrom2d = (grid, row, col) => grid.grid[coord2dTo1d(grid, row, col)]
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -44,15 +52,15 @@ const GridStats = ({grid}) => {
   // get {A: 0 ... Z:0)
   const letters = [...Array(26).keys()].map(i => String.fromCharCode(i + 65)).reduce((acc, v) => ((acc[v] = 0) || acc), {})
   // add counts of single letters
-  const letterCounts = grid.flatMap(r => r.map(v => v)).filter(v => v.match(/^[A-Z]$/)).reduce((acc, v) => ((acc[v] = (acc[v] || 0) + 1) && acc), letters)
+  const letterCounts = grid.grid.map(v => v).filter(v => v.match(/^[A-Z]$/)).reduce((acc, v) => ((acc[v] = (acc[v] || 0) + 1) && acc), letters)
 
   const calcWordCount = (down) => {
     const count = {}
-    for (let i=0; i<=grid.length-1; ++i) {
+    for (let i=0; i<=grid.size.rows; ++i) {
       let len = 0
-      for (let j=0; j<=grid[0].length-1; ++j) {
-        let v = down ?  grid[j][i] : grid[i][j]
-        if(v !== "!") {
+      for (let j=0; j<=grid.size.cols; ++j) {
+        let v = down ?  valFrom2d(grid, j, i) : valFrom2d(grid, i, j)
+        if(isBlockedSquare(v)) {
           len += 1
         } else {
           if (len > 0) {
@@ -128,10 +136,6 @@ const WordList = ({currentWord}) => {
   </div>
 }
 
-const w = 15
-const h = 15
-const gr = JSON.stringify([...Array(w).keys()].map(r => [...Array(h).keys()].map(x => "")))
-
 
 class Movement {
   constructor({selected, width, height, currentWord, setSelected}) {
@@ -201,8 +205,6 @@ function TabPanel(props) {
 
 function KeyPressHandler(props) {
   const {
-    width,
-    height,
     selected,
     setSelected,
     setCurrentWord,
@@ -211,34 +213,35 @@ function KeyPressHandler(props) {
     updateGrid
   } = props
 
+  const {rows: width, cols: height} = grid.size
+
   const handleKeyPressed = (e) => {
     if (selected) {
       const movement = new Movement({width, height, setSelected, currentWord, selected})
 
       if (e.key === "Backspace") {
-        const old = grid[selected.row][selected.column]
-        if (old === '!') {
-          grid[height - selected.row - 1][width - selected.column - 1] = ''
+        const old = valFrom2d(grid, selected.row, selected.column)
+        if (isBlockedSquare(old)) {
+          grid.grid[coord2dTo1d(grid, height - selected.row - 1, width - selected.column - 1)] = ""
         }
-        grid[selected.row][selected.column] = ""
+        grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = ""
 
         movement.moveBack()
-        updateGrid([...grid])
-
-      } else if(e.key.match(/^[a-z]$/i)) {
+        updateGrid(grid.grid)
+      } else if(e.key.match(/^[a-z0-9]$/i)) {
         let k = e.key.toUpperCase()
         if (e.ctrlKey) {
-          grid[selected.row][selected.column] += k
+          grid.grid[coord2dTo1d(grid, selected.row, selected.column)] += k
         } else {
-          grid[selected.row][selected.column] = k
+          grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = k
           movement.moveForward()
         }
-        updateGrid([...grid])
-      } else if(e.key === '!') {
-        grid[selected.row][selected.column] = e.key
-        grid[height - selected.row - 1][width - selected.column - 1] = e.key
+        updateGrid(grid.grid)
+      } else if(e.key === BLOCKED_SQUARE) {
+        grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = e.key
+        grid.grid[coord2dTo1d(grid, height - selected.row - 1, width - selected.column - 1)] = e.key
         movement.moveForward()
-        updateGrid([...grid])
+        updateGrid(grid.grid)
       } else if (e.key === ' ') {
         setCurrentWord(Object.assign({}, currentWord, {
           direction: currentWord.direction === DIRECTION_ACROSS ? DIRECTION_DOWN : DIRECTION_ACROSS
@@ -265,17 +268,19 @@ function KeyPressHandler(props) {
   return <React.Fragment/>
 }
 
-function calcNumbers(grid) {
-  let out = grid.map(r => r.map(c => "")); // clone grid
-  let num = 1;
-  for (let i=0; i<grid.length; ++i){
-    for (let j=0; j<grid[i].length; ++j) {
-      if (grid[i][j] === "!") continue;
 
-      if((i === 0 || grid[i-1][j] === "!") && (i !== grid.length || grid[i+1][j] !== '!')) {
-        out[i][j] = num++;
-      } else if((j === 0 || grid[i][j-1] === "!") && (j !== grid[i].length || grid[i][j+1] === '!')) {
-        out[i][j] = num++;
+function calcNumbers(grid) {
+  const {rows, cols} = grid.size
+  let out = grid.grid.map(r => 0); // clone grid
+  let num = 1;
+  for (let i=0; i<rows; ++i){
+    for (let j=0; j<cols; ++j) {
+      if (isBlockedSquare(valFrom2d(grid, i, j))) continue;
+
+      if(
+        ((i === 0 || isBlockedSquare(valFrom2d(grid,i-1,j)) && (i !== rows || isBlockedSquare(valFrom2d(grid,i+1,j))))) ||
+        ((j === 0 || isBlockedSquare(valFrom2d(grid,i,j-1)) && (j !== cols || isBlockedSquare(valFrom2d(grid,i,j+1)))))) {
+        out[coord2dTo1d(grid, i, j)] = num++;
       }
     }
   }
@@ -286,11 +291,11 @@ function calcNumbers(grid) {
 function calcCurrentWord({currentWord, grid, selected}) {
     if (!selected) { return currentWord }
 
-    const valFor = (x) => currentWord.direction === DIRECTION_ACROSS ? grid[selected.row][x] :grid[x][selected.column]
-    const coordinatesFor = (x) => currentWord.direction === DIRECTION_ACROSS ? [selected.row, x] : [x, selected.column]
-    const isEnd = (end) => currentWord.direction === DIRECTION_ACROSS ? end < grid[0].length : end < grid.length
+    const valFor = (x) => isDirectionAcross(currentWord.direction) ? valFrom2d(grid,selected.row, x) : valFrom2d(grid, x, selected.column)
+    const coordinatesFor = (x) => isDirectionAcross(currentWord.direction) ? [selected.row, x] : [x, selected.column]
+    const isEnd = (end) => isDirectionAcross(currentWord.direction) ? end < grid.size.cols : end < grid.size.rows
 
-    let start = currentWord.direction === DIRECTION_ACROSS ? selected.column : selected.row;
+    let start = isDirectionAcross(currentWord.direction) ? selected.column : selected.row;
     let end = start
 
     // Find beginning
@@ -298,13 +303,14 @@ function calcCurrentWord({currentWord, grid, selected}) {
     // When convert those values into an string and convert blanks to . for word search
     // also compile list of coordinates for grid highlighting
     //  finally set the new state
-    while(start>0 && valFor(start) !== "!") start--;
-    while(isEnd(end) && valFor(end) !== "!") end++;
-    if (valFor(start) === "!") start++;
+    while(start>0 && !isBlockedSquare(valFor(start))) start--;
+    while(isEnd(end) && !isBlockedSquare(valFor(end))) end++;
+    if (isBlockedSquare(valFor(start))) start++;
 
     let word = ""
     let coordinates = []
 
+    console.log(start, end)
     for(let i=start; i<end; ++i) {
       let v = valFor(i)
       if (v === "") v = ".";
@@ -319,26 +325,57 @@ function calcCurrentWord({currentWord, grid, selected}) {
     })
 }
 
+// Format specified by https://www.xwordinfo.com/JSON/
+const DEFAULT_GRID = function(){
+  let g = {
+    title: "TODO: NY Times, Thu, Sep 11, 2008",
+    author: "TODO: Caleb Madison",
+    editor: "TODO: Will Shortz",
+    copyright: "TODO: 2008, The New York Times",
+    publisher: "TODO: The New York Times",
+    date: "TODO: 9/11/2008",
+    size: {
+      rows: 15,
+      cols: 15
+    },
+    // clues should include number as well e.g. "1. Waxed"
+    clues: {
+      across: [],
+      down: []
+    }
+  }
+  return Object.assign(g, {
+    // '.' means black multiple letters for rebus
+    //grid: [...Array(g.size.rows*g.size.cols).keys()],
+    grid: ["F","E","R","N","E","T",".",".",".","R","A","D","I","O","HEAD","E","","E","","N","A",".",".","","","","R","","","C","E","","B","","C","K",".",".","","","","","","","H","D","O","U","B","L","E","HEAD","E","R",".",".",".","","","E","S","","S",".",".","S","O","","",".",".",".",".",".","E",".",".",".","C","R","A","F","T","B","R","E","W","E","R","S",".",".","","","","W","F","",".","","","","","","E",".","","","","","A",".",".",".",".","","","","",".","P","","","","","L",".","","","","","","",".",".","S","H","R","U","N","K","E","N","H","E","A",".",".",".",".","E",".",".",".",".",".","","","","",".",".","","","","U","S","E",".",".",".","T","R","I","P","L","E","S","E","C","D","O","N","C","HEAD","L","E",".",".","","","","","","","O","U","T","P","O","U","R",".",".","","","","","","","S","P","R","A","N","G",".",".",".","","","","","",""],
+    // 0 means no number
+    //gridnums: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
+    gridnums: [1,2,3,4,5,6,0,0,0,7,8,9,10,11,12,13,0,0,0,0,0,0,0,14,0,0,0,0,0,0,15,0,0,0,0,0,0,0,16,0,0,0,0,0,0,17,0,0,0,0,0,18,19,0,0,0,0,20,0,0,21,0,0,0,0,22,0,0,0,0,0,0,0,0,23,0,0,0,24,25,0,0,0,0,26,27,28,29,30,0,0,0,31,0,0,0,0,0,0,32,0,0,0,0,0,0,33,0,0,0,0,0,0,0,0,34,0,0,0,0,35,0,0,0,0,0,0,36,37,38,0,0,0,0,0,39,0,0,0,0,0,40,0,0,0,0,0,0,0,0,41,0,0,0,0,0,42,0,0,0,0,0,43,44,45,46,47,48,0,0,0,49,0,0,0,50,51,0,0,0,52,0,0,53,54,55,0,0,0,56,0,0,0,0,0,57,0,0,0,0,0,0,0,0,58,0,0,0,0,0,59,0,0,0,0,0,0,0,0,60,0,0,0,0,0],
+    // TODO: 0 means circle 1 means circle
+    circles: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
+  })
+}()
+
 function App() {
   const classes = useStyles()
   const [tabValue, handleTabChanged] = useState(0)
   const [selected, setSelected] = useState()
   const [currentWord, setCurrentWord] = useState({word: "", direction: DIRECTION_ACROSS, coordinates: []})
-  const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid") || gr))
-  const [clueNumbers, setClueNumbers] = useState(calcNumbers(grid));
+  const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")))
+
+  const [gridModel, setGridModel] = useState({})
 
 
-  const width = grid[0].length
-  const height = grid.length
-
+  // updateGrid only updates the grid section of grid
   const updateGrid = (nextGrid) => {
-    localStorage.setItem("grid", JSON.stringify(nextGrid))
-    updateGridState(nextGrid)
+    const g = Object.assign({}, grid, {grid: nextGrid})
+    localStorage.setItem("grid", JSON.stringify(g))
+    updateGridState(g)
   }
 
   useEffect(() =>
-    setClueNumbers(calcNumbers(grid)),
-    [grid]
+    updateGridState(Object.assign(grid, {gridnums: calcNumbers(grid)})),
+    [grid.grid]
   )
 
   useEffect(() =>
@@ -351,8 +388,6 @@ function App() {
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
 
   const kphProps = {
-    width,
-    height,
     selected,
     setSelected,
     setCurrentWord,
@@ -368,7 +403,7 @@ function App() {
         <Grid container spacing={0}>
           <Grid item xs>
             <Paper className={clsGridPaper} >
-              <XGrid grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} clueNumbers={clueNumbers}/>
+              <XGrid grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} />
             </Paper>
           </Grid>
           <Grid item xs={6}>

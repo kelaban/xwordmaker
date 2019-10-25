@@ -1,18 +1,18 @@
 import React from 'react';
 import './XGrid.css';
+import { isBlockedSquare }  from './constants';
 
-export default function Grid({grid, selected, currentWord, clueNumbers, onClick}) {
-  const width = grid[0].length
-  const height = grid.length
+export default function Grid({grid, selected, currentWord, onClick}) {
+  const {rows, cols} = grid.size
   // go from 0 -> width*height and map to a block in the view
-  const gridItems = [...Array(width*height).keys()]
+  const gridItems = [...Array(rows*cols).keys()]
       .map(i => {
-        const row = Math.floor(i/width)
-        const column = Math.floor(i%width)
-        const val = grid[row][column]
+        const row = Math.floor(i/rows)
+        const column = Math.floor(i%rows)
+        const val = grid.grid[i]
         const isSelected = selected && selected.row === row && selected.column === column
         let classNames = ["Grid-item"]
-        if (val === "!") {
+        if (isBlockedSquare(val)) {
           classNames.push("Grid-item-blocked")
         }
         if (isSelected) {
@@ -27,7 +27,7 @@ export default function Grid({grid, selected, currentWord, clueNumbers, onClick}
 
         return (
           <div key={i} className={cn} onClick={() => onClick({row, column})}>
-            <span className="Grid-number">{clueNumbers[row][column]}</span>
+            <span className="Grid-number">{grid.gridnums[i] > 0 ? grid.gridnums[i] : ''}</span>
             <span style={style}>{val}</span>
           </div>
         )
@@ -36,8 +36,7 @@ export default function Grid({grid, selected, currentWord, clueNumbers, onClick}
   return (
     <div
       style={{
-        gridTemplateColumns: `repeat(${width}, 1fr)`,
-        gridTemplateRows: `repeat(${width}, 1fr)`
+        gridTemplateColumns: `repeat(${rows}, 1fr)`,
       }}
       className="Grid-container"
     >
