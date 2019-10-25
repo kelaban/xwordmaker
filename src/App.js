@@ -11,6 +11,8 @@ import {
   BLOCKED_SQUARE
 }  from './constants';
 
+import { saveAs } from 'file-saver';
+
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Container from '@material-ui/core/Container';
@@ -19,6 +21,12 @@ import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import Typography from '@material-ui/core/Typography';
+import Button from '@material-ui/core/Button';
+import SaveAlt from '@material-ui/icons/SaveAlt';
+import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 
 
 
@@ -29,9 +37,13 @@ const useStyles = makeStyles(theme => ({
   root: {
     display: "flex",
   },
+  title: {
+    flexGrow: 1
+  },
   container: {
     paddingLeft: 12,
     paddingRight: 12,
+    paddingTop: 32,
   },
   paper: {
     padding: 10,
@@ -346,11 +358,11 @@ const DEFAULT_GRID = function(){
   }
   return Object.assign(g, {
     // '.' means black multiple letters for rebus
-    //grid: [...Array(g.size.rows*g.size.cols).keys()],
-    grid: ["F","E","R","N","E","T",".",".",".","R","A","D","I","O","HEAD","E","","E","","N","A",".",".","","","","R","","","C","E","","B","","C","K",".",".","","","","","","","H","D","O","U","B","L","E","HEAD","E","R",".",".",".","","","E","S","","S",".",".","S","O","","",".",".",".",".",".","E",".",".",".","C","R","A","F","T","B","R","E","W","E","R","S",".",".","","","","W","F","",".","","","","","","E",".","","","","","A",".",".",".",".","","","","",".","P","","","","","L",".","","","","","","",".",".","S","H","R","U","N","K","E","N","H","E","A",".",".",".",".","E",".",".",".",".",".","","","","",".",".","","","","U","S","E",".",".",".","T","R","I","P","L","E","S","E","C","D","O","N","C","HEAD","L","E",".",".","","","","","","","O","U","T","P","O","U","R",".",".","","","","","","","S","P","R","A","N","G",".",".",".","","","","","",""],
+    grid: [...Array(g.size.rows*g.size.cols).keys()].map(v => ""),
+    //grid: ["F","E","R","N","E","T",".",".",".","R","A","D","I","O","HEAD","E","","E","","N","A",".",".","","","","R","","","C","E","","B","","C","K",".",".","","","","","","","H","D","O","U","B","L","E","HEAD","E","R",".",".",".","","","E","S","","S",".",".","S","O","","",".",".",".",".",".","E",".",".",".","C","R","A","F","T","B","R","E","W","E","R","S",".",".","","","","W","F","",".","","","","","","E",".","","","","","A",".",".",".",".","","","","",".","P","","","","","L",".","","","","","","",".",".","S","H","R","U","N","K","E","N","H","E","A",".",".",".",".","E",".",".",".",".",".","","","","",".",".","","","","U","S","E",".",".",".","T","R","I","P","L","E","S","E","C","D","O","N","C","HEAD","L","E",".",".","","","","","","","O","U","T","P","O","U","R",".",".","","","","","","","S","P","R","A","N","G",".",".",".","","","","","",""],
     // 0 means no number
-    //gridnums: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
-    gridnums: [1,2,3,4,5,6,0,0,0,7,8,9,10,11,12,13,0,0,0,0,0,0,0,14,0,0,0,0,0,0,15,0,0,0,0,0,0,0,16,0,0,0,0,0,0,17,0,0,0,0,0,18,19,0,0,0,0,20,0,0,21,0,0,0,0,22,0,0,0,0,0,0,0,0,23,0,0,0,24,25,0,0,0,0,26,27,28,29,30,0,0,0,31,0,0,0,0,0,0,32,0,0,0,0,0,0,33,0,0,0,0,0,0,0,0,34,0,0,0,0,35,0,0,0,0,0,0,36,37,38,0,0,0,0,0,39,0,0,0,0,0,40,0,0,0,0,0,0,0,0,41,0,0,0,0,0,42,0,0,0,0,0,43,44,45,46,47,48,0,0,0,49,0,0,0,50,51,0,0,0,52,0,0,53,54,55,0,0,0,56,0,0,0,0,0,57,0,0,0,0,0,0,0,0,58,0,0,0,0,0,59,0,0,0,0,0,0,0,0,60,0,0,0,0,0],
+    gridnums: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
+    //gridnums: [1,2,3,4,5,6,0,0,0,7,8,9,10,11,12,13,0,0,0,0,0,0,0,14,0,0,0,0,0,0,15,0,0,0,0,0,0,0,16,0,0,0,0,0,0,17,0,0,0,0,0,18,19,0,0,0,0,20,0,0,21,0,0,0,0,22,0,0,0,0,0,0,0,0,23,0,0,0,24,25,0,0,0,0,26,27,28,29,30,0,0,0,31,0,0,0,0,0,0,32,0,0,0,0,0,0,33,0,0,0,0,0,0,0,0,34,0,0,0,0,35,0,0,0,0,0,0,36,37,38,0,0,0,0,0,39,0,0,0,0,0,40,0,0,0,0,0,0,0,0,41,0,0,0,0,0,42,0,0,0,0,0,43,44,45,46,47,48,0,0,0,49,0,0,0,50,51,0,0,0,52,0,0,53,54,55,0,0,0,56,0,0,0,0,0,57,0,0,0,0,0,0,0,0,58,0,0,0,0,0,59,0,0,0,0,0,0,0,0,60,0,0,0,0,0],
     // TODO: 0 means circle 1 means circle
     circles: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
   })
@@ -361,7 +373,7 @@ function App() {
   const [tabValue, handleTabChanged] = useState(0)
   const [selected, setSelected] = useState()
   const [currentWord, setCurrentWord] = useState({word: "", direction: DIRECTION_ACROSS, coordinates: []})
-  const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")))
+  const [grid, updateGridState] = useState(DEFAULT_GRID)//JSON.parse(localStorage.getItem("grid")))
 
   const [gridModel, setGridModel] = useState({})
 
@@ -383,6 +395,22 @@ function App() {
     [selected, currentWord.direction]
   )
 
+  const handleSavePuzzle = () => {
+    var blob = new Blob([JSON.stringify(grid)], {type: "text/plain;charset=utf-8"});
+    saveAs(blob, "puzzle.json")
+  }
+
+  const handleImportPuzzle = (e) => {
+    let input = e.target;
+
+    let reader = new FileReader();
+    reader.onload = function(){
+      let text = reader.result;
+      updateGridState(JSON.parse(text))
+    };
+
+    reader.readAsText(input.files[0]);
+  }
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
@@ -398,6 +426,34 @@ function App() {
 
   return (
     <div className="App">
+      <AppBar position="static">
+       <Toolbar>
+        <Typography variant="h6" className={classes.title}>
+          XWordMaker
+        </Typography>
+        <Button
+          aria-label="Save puzzle"
+          color="inherit"
+          startIcon={<SaveAlt />}
+          onClick={handleSavePuzzle}
+        >
+          Save Puzzle
+        </Button>
+        <Button
+          aria-label="Import puzzle"
+          color="inherit"
+          component="label"
+          startIcon={<ArrowUpwardIcon />}
+        >
+          Import Puzzle
+          <input
+            type="file"
+            style={{ display: "none" }}
+            onChange={handleImportPuzzle}
+            />
+        </Button>
+       </Toolbar>
+      </AppBar>
       <KeyPressHandler {...kphProps} />
       <Container className={classes.container}>
         <Grid container spacing={0}>
