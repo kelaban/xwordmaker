@@ -24,11 +24,15 @@ function decode(input)
   return doc.documentElement.textContent;
 }
 
-export default function Clues({grid, onClueFocus}) {
+export default function Clues({grid, onClueFocus, onClueChanged}) {
   const classes = useStyles();
 
   const handleFocus = (dir, clueNum) => (e) => {
     onClueFocus(dir, clueNum)
+  }
+
+  const handleUpdateWord = (dir, word) => e => {
+    onClueChanged(dir, word, e.target.value)
   }
 
   const mapClues = (dir) => {
@@ -41,13 +45,14 @@ export default function Clues({grid, onClueFocus}) {
           <TextField
             key={i}
             label={`${clueNum}: ${word}`}
-            value={clueText}
+            defaultValue={clueText}
             className={classes.textField}
             type="text"
             margin="dense"
             variant="outlined"
             fullWidth
             onFocus={handleFocus(dir, clueNum)}
+            onBlur={handleUpdateWord(dir, word)}
           />
       )
     })

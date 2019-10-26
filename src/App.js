@@ -177,21 +177,51 @@ function TabPanel(props) {
 }
 
 
-
-
-function calcNumbers(grid) {
+function calcNumbersAndAnswers(grid, wordToClue) {
   const {rows, cols} = grid.size
-  let out = grid.grid.map(r => 0); // clone grid
+  let out = {
+    gridnums: grid.grid.map(r => 0), // clone grid
+    answers: {down: [], across: []},
+    clues: {down: [], across: []}
+  }
+
   let num = 1;
   for (let i=0; i<rows; ++i){
     for (let j=0; j<cols; ++j) {
       if (isBlockedSquare(valFrom2d(grid, i, j))) continue;
 
-      if(
-        ((i === 0 || isBlockedSquare(valFrom2d(grid,i-1,j)) && (i !== rows || isBlockedSquare(valFrom2d(grid,i+1,j))))) ||
-        ((j === 0 || isBlockedSquare(valFrom2d(grid,i,j-1)) && (j !== cols || isBlockedSquare(valFrom2d(grid,i,j+1)))))) {
-        out[coord2dTo1d(grid, i, j)] = num++;
+      const isNewDown = (i === 0 || isBlockedSquare(valFrom2d(grid,i-1,j))) && (i !== rows || isBlockedSquare(valFrom2d(grid,i+1,j)))
+      const isNewAcross = (j === 0 || isBlockedSquare(valFrom2d(grid,i,j-1))) && (j !== cols || isBlockedSquare(valFrom2d(grid,i,j+1)))
+      if(isNewAcross || isNewDown) {
+        out.gridnums[coord2dTo1d(grid, i, j)] = num++;
       }
+
+      if(isNewAcross) {
+        let currentWord = ""
+        let start = j;
+        while(!isBlockedSquare(valFrom2d(grid,i,start)) && start < cols) {
+          let w = valFrom2d(grid, i, start)
+          currentWord += w ? w : '_'
+          start++
+        }
+        out.answers.across.push(currentWord)
+        let clue = wordToClue[currentWord] || ''
+        out.clues.across.push(`${num-1}. ${clue}`)
+      }
+
+      if(isNewDown) {
+        let currentWord = ""
+        let start = i;
+        while(!isBlockedSquare(valFrom2d(grid,start,j)) && start < rows) {
+          let w = valFrom2d(grid, start, j)
+          currentWord += w ? w : '_'
+          start++
+        }
+        out.answers.down.push(currentWord)
+        let clue = wordToClue[currentWord] || ''
+        out.clues.down.push(`${num-1}. ${clue}`)
+      }
+
     }
   }
 
@@ -268,6 +298,7 @@ function App() {
     currentWord: {word: "", direction: DIRECTION_ACROSS, coordinates: []}
   })
   const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15}))
+  const [wordToClue, setWordToClue] = useState({})
   const [gridFocus, setGridFocus] = useState(false)
 
   const {selected, currentWord} = motionState
@@ -279,16 +310,20 @@ function App() {
     })
   }
 
-  // updateGrid only updates the grid section of grid
-  const updateGrid = (nextGrid) => {
-    const g = Object.assign({}, grid, {grid: [...nextGrid]})
-    localStorage.setItem("grid", JSON.stringify(g))
-    updateGridState(g)
+  const updateGridStorageAndState = (nextGrid) => {
+    localStorage.setItem("grid", JSON.stringify(nextGrid))
+    updateGridState(nextGrid)
   }
 
-  useEffect(() =>
-    updateGridState(Object.assign({}, grid, {gridnums: calcNumbers(grid)})),
-    [grid.grid]
+  // updateGrid only updates the grid section of grid
+  const updateGrid = (nextGrid) => {
+    updateGridStorageAndState(Object.assign({}, grid, {grid: [...nextGrid]}))
+  }
+
+  useEffect(() => {
+    updateGridStorageAndState(Object.assign({}, grid, calcNumbersAndAnswers(grid, wordToClue)))
+  },
+    [grid.grid, wordToClue]
   )
 
   useEffect(() => {
@@ -296,6 +331,8 @@ function App() {
   },
     [selected, currentWord.direction]
   )
+
+  console.log(grid)
 
 
   const setSelected = (nextSelected) => {
@@ -340,6 +377,10 @@ function App() {
     })
   }
 
+  const handleClueChanged = (direction, word, clue) => {
+    setWordToClue({...wordToClue, [word]: clue})
+  }
+
   const handleSavePuzzle = () => {
     var blob = new Blob([JSON.stringify(grid)], {type: "text/plain;charset=utf-8"});
     saveAs(blob, "puzzle.json")
@@ -352,7 +393,19 @@ function App() {
     let reader = new FileReader();
     reader.onload = function(){
       let text = reader.result;
-      updateGridState(JSON.parse(text))
+      const newGrid = JSON.parse(text)
+      const newWordToClue = {}
+      newGrid.answers.down.reduce((acc, w, i) => {
+        let ww = (newGrid.clues.down[i] || '').replace(/^ *[0-9]*\. */, '')
+        acc[w] = ww
+        return acc
+      }, newWordToClue)
+      newGrid.answers.across.reduce((acc, w, i) => {
+        acc[w] = (newGrid.clues.across[i] || '').replace(/^ *[0-9]*\. */, '')
+        return acc
+      }, newWordToClue)
+      updateGridState(newGrid)
+      setWordToClue(newWordToClue)
     };
 
     reader.readAsText(input.files[0]);
@@ -440,7 +493,7 @@ function App() {
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
             <Paper className={clsScrollPaper} >
-              <Clues grid={grid} onClueFocus={setClueFocus} />
+              <Clues grid={grid} onClueFocus={setClueFocus} onClueChanged={handleClueChanged}/>
             </Paper>
             </TabPanel>
             <TabPanel value={tabValue} index={2}>
