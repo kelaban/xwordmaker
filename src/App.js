@@ -190,6 +190,7 @@ function calcNumbersAndAnswers(grid, wordToClue) {
     for (let j=0; j<cols; ++j) {
       if (isBlockedSquare(valFrom2d(grid, i, j))) continue;
 
+      // TODO something is wrong here on letter words are being counted as new words
       const isNewDown = (i === 0 || isBlockedSquare(valFrom2d(grid,i-1,j))) && (i !== rows || isBlockedSquare(valFrom2d(grid,i+1,j)))
       const isNewAcross = (j === 0 || isBlockedSquare(valFrom2d(grid,i,j-1))) && (j !== cols || isBlockedSquare(valFrom2d(grid,i,j+1)))
       if(isNewAcross || isNewDown) {
@@ -329,18 +330,23 @@ function App() {
 
   const {selected, currentWord} = motionState
 
-  const updateGridState = (nextGrid) => {
+  const updateGridState = (nextGrid, extraState) => {
+    extraState = extraState || {}
     updateAllGridState((prevState) => ({
       ...prevState,
+      ...extraState,
       grid: nextGrid
     }))
   }
 
-  const setWordToClue = (nextWordToClue) => {
-    updateAllGridState({
-      ...gridState,
-      wordToClue: nextWordToClue
-    })
+  const updateWordToClue = (word, clue) => {
+    updateAllGridState((prevState) => ({
+        ...prevState,
+        wordToClue: {
+          ...prevState.wordToClue,
+          [word]: clue
+        }
+    }))
   }
 
   const setCurrentWord = (currentWord) => {
@@ -350,9 +356,9 @@ function App() {
     })
   }
 
-  const updateGridStorageAndState = (nextGrid) => {
+  const updateGridStorageAndState = (nextGrid, extraState) => {
     localStorage.setItem("grid", JSON.stringify(nextGrid))
-    updateGridState(nextGrid)
+    updateGridState(nextGrid, extraState)
   }
 
   // updateGrid only updates the grid section of grid
@@ -416,7 +422,7 @@ function App() {
   }, [grid])
 
   const handleClueChanged = useCallback((direction, word, clue) => {
-    setWordToClue((prevState) => ({...prevState, [word]: clue}))
+    updateWordToClue(word, clue)
   }, [])
 
   const handleSavePuzzle = () => {
@@ -432,8 +438,7 @@ function App() {
     reader.onload = function(){
       let text = reader.result;
       const newGrid = JSON.parse(text)
-      updateAllGridState({
-        grid: newGrid,
+      updateGridStorageAndState(newGrid, {
         wordToClue: parseWordToClue(newGrid)
       })
     };
