@@ -36,7 +36,7 @@ export default function NewPuzzleForm({onSave}) {
   };
 
   const handleChange = (dir) => (event) => {
-    setValues(Object.assign({}, values, {[dir]: +event.target.value}))
+    setValues(Object.assign({}, values, {[dir]: +event.target.value || ''}))
   }
 
   return (
@@ -66,6 +66,10 @@ export default function NewPuzzleForm({onSave}) {
             }}
             margin="normal"
             variant="outlined"
+            inputProps={{
+              min: 1,
+              max: 100
+            }}
           />
           <TextField
             label="Columns"
@@ -78,6 +82,10 @@ export default function NewPuzzleForm({onSave}) {
             }}
             margin="normal"
             variant="outlined"
+            inputProps={{
+              min: 1,
+              max: 100
+            }}
           />
         </DialogContent>
         <DialogActions>

@@ -5,6 +5,7 @@ import './App.css';
 import XGrid from './XGrid'
 import NewPuzzleForm from './NewPuzzleForm'
 import KeyPressHandler from './KeyPressHandler'
+import Clues from './Clues'
 import {
   isDirectionAcross,
   isBlockedSquare,
@@ -64,6 +65,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const GridStats = ({grid}) => {
+  return null
   // get {A: 0 ... Z:0)
   const letters = [...Array(26).keys()].map(i => String.fromCharCode(i + 65)).reduce((acc, v) => ((acc[v] = 0) || acc), {})
   // add counts of single letters
@@ -164,7 +166,8 @@ function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
   let style = {}
-  if (value !== index) {
+  let hidden = value !== index
+  if (hidden) {
     style['display'] = "none"
   }
 
@@ -312,6 +315,31 @@ function App() {
     })
   }
 
+  const setClueFocus = (direction, clueNum) => {
+    const nextCurrentWord = {
+      ...currentWord,
+      direction
+    }
+
+    let selected = {}
+    for(let i=0; i<grid.gridnums.length; ++i) {
+      if(grid.gridnums[i] == clueNum) {
+        const row = Math.floor(i / grid.size.cols)
+        const column = Math.floor(i % grid.size.cols)
+        selected = {
+          row, column
+        }
+        break;
+      }
+    }
+
+    setMotionState({
+      ...motionState,
+      selected,
+      currentWord: nextCurrentWord
+    })
+  }
+
   const handleSavePuzzle = () => {
     var blob = new Blob([JSON.stringify(grid)], {type: "text/plain;charset=utf-8"});
     saveAs(blob, "puzzle.json")
@@ -393,7 +421,7 @@ function App() {
       </AppBar>
       <KeyPressHandler {...kphProps} />
       <Container className={classes.container}>
-        <Grid container spacing={0}>
+        <Grid container spacing={2}>
           <Grid item xs>
             <Paper className={clsGridPaper} onFocus={handleFocus(true)} onBlur={handleFocus(false)} tabindex="0">
               <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
@@ -402,6 +430,7 @@ function App() {
           <Grid item xs={6}>
             <Tabs value={tabValue} onChange={(e,nv) => handleTabChanged(nv)}>
               <Tab label="Word List"/>
+              <Tab label="Clues"/>
               <Tab label="Grid Stats"/>
             </Tabs>
             <TabPanel value={tabValue} index={0}>
@@ -410,6 +439,11 @@ function App() {
             </Paper>
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
+            <Paper className={clsScrollPaper} >
+              <Clues grid={grid} onClueFocus={setClueFocus} />
+            </Paper>
+            </TabPanel>
+            <TabPanel value={tabValue} index={2}>
               <Paper className={clsScrollPaper} >
                 <GridStats grid={grid} />
               </Paper>
