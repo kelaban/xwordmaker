@@ -59,7 +59,7 @@ const useStyles = makeStyles(theme => ({
   },
   scroll: {
     overflow: "scroll",
-    maxHeight: "calc(100vh - 100px)",
+    maxHeight: "calc(100vh - 180px)",
   }
 }));
 
@@ -189,14 +189,14 @@ class Movement {
   }
 
   moveForward() {
-    if (this.currentWord.direction === DIRECTION_ACROSS) {
+    if (isDirectionAcross(this.currentWord.direction)) {
       this.right()
     } else {
       this.down()
     }
   }
   moveBack() {
-    if (this.currentWord.direction === DIRECTION_ACROSS) {
+    if (isDirectionAcross(this.currentWord.direction)) {
       this.left()
     } else {
       this.up()
@@ -368,12 +368,22 @@ const makePuzzle = (size) => {
 function App() {
   const classes = useStyles()
   const [tabValue, handleTabChanged] = useState(0)
-  const [selected, setSelected] = useState()
-  const [currentWord, setCurrentWord] = useState({word: "", direction: DIRECTION_ACROSS, coordinates: []})
+  const [motionState, setMotionState] = useState({
+    selected: null,
+    currentWord: {word: "", direction: DIRECTION_ACROSS, coordinates: []}
+  })
   const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15}))
 
   const [gridModel, setGridModel] = useState({})
 
+  const {selected, currentWord} = motionState
+
+  const setCurrentWord = (currentWord) => {
+    setMotionState({
+      ...motionState,
+      currentWord
+    })
+  }
 
   // updateGrid only updates the grid section of grid
   const updateGrid = (nextGrid) => {
@@ -392,6 +402,24 @@ function App() {
   },
     [selected, currentWord.direction]
   )
+
+
+  const setSelected = (nextSelected) => {
+    let nextCurrentWord = motionState.currentWord
+
+    if(nextSelected && selected && nextSelected.row === selected.row && nextSelected.column === selected.column) {
+      nextCurrentWord = {
+        ...nextCurrentWord,
+        direction: currentWord.direction === DIRECTION_ACROSS ? DIRECTION_DOWN : DIRECTION_ACROSS
+      }
+    }
+
+    setMotionState({
+      ...motionState,
+      selected: nextSelected,
+      currentWord: nextCurrentWord
+    })
+  }
 
   const handleSavePuzzle = () => {
     var blob = new Blob([JSON.stringify(grid)], {type: "text/plain;charset=utf-8"});
@@ -415,6 +443,7 @@ function App() {
     updateGridState(makePuzzle(size))
     setSelected()
   }
+
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
@@ -464,7 +493,7 @@ function App() {
         <Grid container spacing={0}>
           <Grid item xs>
             <Paper className={clsGridPaper} >
-              <XGrid grid={grid} selected={selected} currentWord={currentWord} onClick={setSelected} />
+              <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
             </Paper>
           </Grid>
           <Grid item xs={6}>
