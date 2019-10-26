@@ -36,7 +36,7 @@ export default function NewPuzzleForm({onSave}) {
   };
 
   const handleChange = (dir) => (event) => {
-    setValues(Object.assign({}, values, {[dir]: event.target.value}))
+    setValues(Object.assign({}, values, {[dir]: +event.target.value}))
   }
 
   return (

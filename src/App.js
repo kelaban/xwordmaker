@@ -67,7 +67,7 @@ const GridStats = ({grid}) => {
   // get {A: 0 ... Z:0)
   const letters = [...Array(26).keys()].map(i => String.fromCharCode(i + 65)).reduce((acc, v) => ((acc[v] = 0) || acc), {})
   // add counts of single letters
-  const letterCounts = grid.grid.map(v => v).filter(v => v.match(/^[A-Z]$/)).reduce((acc, v) => ((acc[v] = (acc[v] || 0) + 1) && acc), letters)
+  const letterCounts = grid.grid.map(v => v).filter(v => v && v.match(/^[A-Z]$/)).reduce((acc, v) => ((acc[v] = (acc[v] || 0) + 1) && acc), letters)
 
   const calcWordCount = (down) => {
     const count = {}
@@ -228,7 +228,7 @@ function KeyPressHandler(props) {
     updateGrid
   } = props
 
-  const {rows: width, cols: height} = grid.size
+  const {rows: height, cols: width} = grid.size
 
   const handleKeyPressed = (e) => {
     if (selected) {
@@ -306,9 +306,9 @@ function calcNumbers(grid) {
 function calcCurrentWord({currentWord, grid, selected}) {
     if (!selected) { return currentWord }
 
-    const valFor = (x) => isDirectionAcross(currentWord.direction) ? valFrom2d(grid,selected.row, x) : valFrom2d(grid, x, selected.column)
+    const valFor = (x) => isDirectionAcross(currentWord.direction) ? valFrom2d(grid, selected.row, x) : valFrom2d(grid, x, selected.column)
     const coordinatesFor = (x) => isDirectionAcross(currentWord.direction) ? [selected.row, x] : [x, selected.column]
-    const isEnd = (end) => isDirectionAcross(currentWord.direction) ? end < grid.size.cols : end < grid.size.rows
+    const isNotEnd = (end) => isDirectionAcross(currentWord.direction) ? end < grid.size.cols : end < grid.size.rows
 
     let start = isDirectionAcross(currentWord.direction) ? selected.column : selected.row;
     let end = start
@@ -319,7 +319,7 @@ function calcCurrentWord({currentWord, grid, selected}) {
     // also compile list of coordinates for grid highlighting
     //  finally set the new state
     while(start>0 && !isBlockedSquare(valFor(start))) start--;
-    while(isEnd(end) && !isBlockedSquare(valFor(end))) end++;
+    while(isNotEnd(end) && !isBlockedSquare(valFor(end))) end++;
     if (isBlockedSquare(valFor(start))) start++;
 
     let word = ""
@@ -331,7 +331,6 @@ function calcCurrentWord({currentWord, grid, selected}) {
       word += v
       coordinates.push(coordinatesFor(i))
     }
-
 
     return Object.assign({}, currentWord, {
       word,
@@ -388,8 +387,9 @@ function App() {
     [grid.grid]
   )
 
-  useEffect(() =>
-    setCurrentWord(calcCurrentWord({selected, currentWord, grid})),
+  useEffect(() => {
+    setCurrentWord(calcCurrentWord({selected, currentWord, grid}))
+  },
     [selected, currentWord.direction]
   )
 
@@ -413,6 +413,7 @@ function App() {
 
   const handleCreateNewPuzzle = (size) => {
     updateGridState(makePuzzle(size))
+    setSelected()
   }
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
