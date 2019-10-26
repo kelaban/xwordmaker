@@ -11,13 +11,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 
-const useStyles = makeStyles(theme => ({
-  textField: {
-      //marginLeft: theme.spacing(1),
-      //marginRight: theme.spacing(1),
-    },
-}));
-
 function decode(input)
 {
   var doc = new DOMParser().parseFromString(input, "text/html");
@@ -25,7 +18,6 @@ function decode(input)
 }
 
 export default function Clues({grid, onClueFocus, onClueChanged}) {
-  const classes = useStyles();
 
   const handleFocus = (dir, clueNum) => (e) => {
     onClueFocus(dir, clueNum)
@@ -41,34 +33,38 @@ export default function Clues({grid, onClueFocus, onClueChanged}) {
       const word = grid.answers[d][i]
       const clueNum = +clue.match(/^ *[0-9]+/)[0].trim()
       const clueText = decode(clue.replace(/^ *[0-9]*\. */, ''))
-      const disable = !clueText.includes("_")
+      const disabled = word.match("_")
+      const error = !disabled && !clueText.length
       return (
           <TextField
-            key={`${i}-${word}-${clueText}`}
+            key={`${clueNum}-${word}`}
             label={`${clueNum}: ${word}`}
             defaultValue={clueText}
-            className={classes.textField}
             type="text"
             margin="dense"
             variant="outlined"
             fullWidth
             onFocus={handleFocus(dir, clueNum)}
             onBlur={handleUpdateWord(dir, word)}
+            disabled={disabled}
+            error={error}
           />
       )
     })
   }
 
+  const across = mapClues(DIRECTION_ACROSS)
+  const down = mapClues(DIRECTION_DOWN)
   return (
     <div>
       <Grid container spacing={1}>
         <Grid item xs>
           <Typography>Across</Typography>
-            {mapClues(DIRECTION_ACROSS)}
+            {across}
         </Grid>
         <Grid item xs>
           <Typography>Down</Typography>
-            {mapClues(DIRECTION_DOWN)}
+            {down}
         </Grid>
       </Grid>
     </div>

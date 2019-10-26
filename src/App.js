@@ -145,6 +145,7 @@ const WordList = ({currentWord, onClick}) => {
             href={`https://www.anagrammer.com/crossword-clues/${w}`}>
             */
 
+  return null;
   return <div>
     Words: {filtered.length > max ? `showing ${max}/` : ''}{filtered.length}
     <List dense>
