@@ -115,7 +115,7 @@ const GridStats = ({grid}) => {
 }
 
 
-const WordList = ({currentWord}) => {
+const WordList = ({currentWord, onClick}) => {
   const [words, setWords] = useState([])
   const [filtered, setFiltered] = useState([])
 
@@ -133,7 +133,7 @@ const WordList = ({currentWord}) => {
     setFiltered(words.filter(w => w.match(query)))
   }, [currentWord.word])
 
-  const max = 200
+  const max = 100
 
   /*
           <ListItem
@@ -145,9 +145,11 @@ const WordList = ({currentWord}) => {
 
   return <div>
     Words: {filtered.length > max ? `showing ${max}/` : ''}{filtered.length}
-    <List>
-      {filtered.slice(0,200).map(w =>
+    <List dense>
+      {filtered.slice(0,max).map(w =>
           <ListItem
+            button
+            onClick={() => onClick(w)}
             key={w}>
             {w}
           </ListItem>
@@ -263,7 +265,6 @@ function App() {
     currentWord: {word: "", direction: DIRECTION_ACROSS, coordinates: []}
   })
   const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15}))
-  const [gridModel, setGridModel] = useState({})
   const [gridFocus, setGridFocus] = useState(false)
 
   const {selected, currentWord} = motionState
@@ -338,6 +339,13 @@ function App() {
     setGridFocus(hasFocus)
   }
 
+  const handleWordListClicked = word => {
+    currentWord.coordinates.forEach((coord, i) => {
+      grid.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
+    })
+    updateGrid(grid.grid)
+  }
+
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
@@ -368,12 +376,12 @@ function App() {
           Save Puzzle
         </Button>
         <Button
-          aria-label="Import puzzle"
+          aria-label="Load puzzle"
           color="inherit"
           component="label"
           startIcon={<ArrowUpwardIcon />}
         >
-          Import Puzzle
+          Load Puzzle
           <input
             type="file"
             style={{ display: "none" }}
@@ -398,7 +406,7 @@ function App() {
             </Tabs>
             <TabPanel value={tabValue} index={0}>
             <Paper className={clsScrollPaper} >
-              <WordList currentWord={currentWord}/>
+              <WordList onClick={handleWordListClicked} currentWord={currentWord}/>
             </Paper>
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
