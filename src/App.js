@@ -514,7 +514,6 @@ function App() {
             <Tabs value={tabValue} onChange={(e,nv) => handleTabChanged(nv)}>
               <Tab label="Word List"/>
               <Tab label="Clues"/>
-              <Tab label="Grid Stats"/>
             </Tabs>
             <TabPanel value={tabValue} index={0}>
             <Paper className={clsScrollPaper} >
@@ -525,11 +524,6 @@ function App() {
             <Paper className={clsScrollPaper} >
               <Clues grid={grid} onClueFocus={handleClueFocus} onClueChanged={handleClueChanged}/>
             </Paper>
-            </TabPanel>
-            <TabPanel value={tabValue} index={2}>
-              <Paper className={clsScrollPaper} >
-                <GridStats grid={grid} />
-              </Paper>
             </TabPanel>
           </Grid>
         </Grid>
