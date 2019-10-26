@@ -37,6 +37,7 @@ export default function Grid({grid, selected, currentWord, onClick}) {
     <div
       style={{
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gridTemplateRows: `repeat(${rows}, 1fr)`,
       }}
       className="Grid-container"
     >
