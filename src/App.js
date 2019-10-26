@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import logo from './logo.svg';
 import './App.css';
 import XGrid from './XGrid'
+import NewPuzzleForm from './NewPuzzleForm'
 import {
   isDirectionAcross,
   isBlockedSquare,
@@ -27,6 +28,8 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import SaveAlt from '@material-ui/icons/SaveAlt';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import AddIcon from '@material-ui/icons/Add';
+
 
 
 
@@ -322,7 +325,6 @@ function calcCurrentWord({currentWord, grid, selected}) {
     let word = ""
     let coordinates = []
 
-    console.log(start, end)
     for(let i=start; i<end; ++i) {
       let v = valFor(i)
       if (v === "") v = ".";
@@ -338,7 +340,7 @@ function calcCurrentWord({currentWord, grid, selected}) {
 }
 
 // Format specified by https://www.xwordinfo.com/JSON/
-const DEFAULT_GRID = function(){
+const makePuzzle = (size) => {
   let g = {
     title: "TODO: NY Times, Thu, Sep 11, 2008",
     author: "TODO: Caleb Madison",
@@ -346,10 +348,7 @@ const DEFAULT_GRID = function(){
     copyright: "TODO: 2008, The New York Times",
     publisher: "TODO: The New York Times",
     date: "TODO: 9/11/2008",
-    size: {
-      rows: 15,
-      cols: 15
-    },
+    size,
     // clues should include number as well e.g. "1. Waxed"
     clues: {
       across: [],
@@ -364,27 +363,28 @@ const DEFAULT_GRID = function(){
     // TODO: 0 means circle 1 means circle
     circles: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
   })
-}()
+}
+
 
 function App() {
   const classes = useStyles()
   const [tabValue, handleTabChanged] = useState(0)
   const [selected, setSelected] = useState()
   const [currentWord, setCurrentWord] = useState({word: "", direction: DIRECTION_ACROSS, coordinates: []})
-  const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")))
+  const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15}))
 
   const [gridModel, setGridModel] = useState({})
 
 
   // updateGrid only updates the grid section of grid
   const updateGrid = (nextGrid) => {
-    const g = Object.assign({}, grid, {grid: nextGrid})
+    const g = Object.assign({}, grid, {grid: [...nextGrid]})
     localStorage.setItem("grid", JSON.stringify(g))
     updateGridState(g)
   }
 
   useEffect(() =>
-    updateGridState(Object.assign(grid, {gridnums: calcNumbers(grid)})),
+    updateGridState(Object.assign({}, grid, {gridnums: calcNumbers(grid)})),
     [grid.grid]
   )
 
@@ -409,6 +409,10 @@ function App() {
     };
 
     reader.readAsText(input.files[0]);
+  }
+
+  const handleCreateNewPuzzle = (size) => {
+    updateGridState(makePuzzle(size))
   }
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
@@ -451,6 +455,7 @@ function App() {
             onChange={handleImportPuzzle}
             />
         </Button>
+        <NewPuzzleForm onSave={handleCreateNewPuzzle}/>
        </Toolbar>
       </AppBar>
       <KeyPressHandler {...kphProps} />
