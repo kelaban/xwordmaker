@@ -1,4 +1,4 @@
-import React, { Component, useState, useEffect } from 'react';
+import React, { Component, memo, useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import logo from './logo.svg';
 import './App.css';
@@ -117,7 +117,7 @@ const GridStats = ({grid}) => {
 }
 
 
-const WordList = ({currentWord, onClick}) => {
+const WordList = memo(({currentWord, onClick}) => {
   const [words, setWords] = useState([])
   const [filtered, setFiltered] = useState([])
 
@@ -145,7 +145,6 @@ const WordList = ({currentWord, onClick}) => {
             href={`https://www.anagrammer.com/crossword-clues/${w}`}>
             */
 
-  return null;
   return <div>
     Words: {filtered.length > max ? `showing ${max}/` : ''}{filtered.length}
     <List dense>
@@ -159,7 +158,7 @@ const WordList = ({currentWord, onClick}) => {
        )}
     </List>
   </div>
-}
+})
 
 
 
@@ -331,10 +330,10 @@ function App() {
   const {selected, currentWord} = motionState
 
   const updateGridState = (nextGrid) => {
-    updateAllGridState({
-      ...gridState,
+    updateAllGridState((prevState) => ({
+      ...prevState,
       grid: nextGrid
-    })
+    }))
   }
 
   const setWordToClue = (nextWordToClue) => {
@@ -391,7 +390,7 @@ function App() {
     })
   }
 
-  const setClueFocus = (direction, clueNum) => {
+  const handleClueFocus = useCallback((direction, clueNum) => {
     const nextCurrentWord = {
       ...currentWord,
       direction
@@ -409,16 +408,16 @@ function App() {
       }
     }
 
-    setMotionState({
-      ...motionState,
+    setMotionState((prevState) => ({
+      ...prevState,
       selected,
       currentWord: nextCurrentWord
-    })
-  }
+    }))
+  }, [grid])
 
-  const handleClueChanged = (direction, word, clue) => {
-    setWordToClue({...wordToClue, [word]: clue})
-  }
+  const handleClueChanged = useCallback((direction, word, clue) => {
+    setWordToClue((prevState) => ({...prevState, [word]: clue}))
+  }, [])
 
   const handleSavePuzzle = () => {
     var blob = new Blob([JSON.stringify(grid)], {type: "text/plain;charset=utf-8"});
@@ -451,12 +450,12 @@ function App() {
     setGridFocus(hasFocus)
   }
 
-  const handleWordListClicked = word => {
+  const handleWordListClicked = useCallback(word => {
     currentWord.coordinates.forEach((coord, i) => {
       grid.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
     })
     updateGrid(grid.grid)
-  }
+  }, [grid, currentWord])
 
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
@@ -524,7 +523,7 @@ function App() {
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
             <Paper className={clsScrollPaper} >
-              <Clues grid={grid} onClueFocus={setClueFocus} onClueChanged={handleClueChanged}/>
+              <Clues grid={grid} onClueFocus={handleClueFocus} onClueChanged={handleClueChanged}/>
             </Paper>
             </TabPanel>
             <TabPanel value={tabValue} index={2}>
