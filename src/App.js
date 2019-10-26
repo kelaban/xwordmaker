@@ -49,6 +49,9 @@ const useStyles = makeStyles(theme => ({
     paddingTop: 32,
   },
   paper: {
+    "&:focus": {
+      outline: 0,
+    },
     padding: 10,
   },
   gridPaper: {
@@ -225,12 +228,17 @@ function KeyPressHandler(props) {
     setCurrentWord,
     currentWord,
     grid,
-    updateGrid
+    updateGrid,
+    hasFocus
   } = props
 
   const {rows: height, cols: width} = grid.size
 
   const handleKeyPressed = (e) => {
+    if (!hasFocus) {
+      return
+    }
+
     if (selected) {
       const movement = new Movement({width, height, setSelected, currentWord, selected})
 
@@ -373,8 +381,8 @@ function App() {
     currentWord: {word: "", direction: DIRECTION_ACROSS, coordinates: []}
   })
   const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15}))
-
   const [gridModel, setGridModel] = useState({})
+  const [gridFocus, setGridFocus] = useState(false)
 
   const {selected, currentWord} = motionState
 
@@ -444,6 +452,10 @@ function App() {
     setSelected()
   }
 
+  const handleFocus = hasFocus => e => {
+    setGridFocus(hasFocus)
+  }
+
 
   const clsGridPaper = clsx(classes.paper, classes.gridPaper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
@@ -454,7 +466,8 @@ function App() {
     setCurrentWord,
     currentWord,
     grid,
-    updateGrid
+    updateGrid,
+    hasFocus: gridFocus
   }
 
   return (
@@ -492,7 +505,7 @@ function App() {
       <Container className={classes.container}>
         <Grid container spacing={0}>
           <Grid item xs>
-            <Paper className={clsGridPaper} >
+            <Paper className={clsGridPaper} onFocus={handleFocus(true)} onBlur={handleFocus(false)} tabindex="0">
               <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
             </Paper>
           </Grid>
