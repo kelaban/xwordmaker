@@ -41,9 +41,10 @@ export default function Clues({grid, onClueFocus, onClueChanged}) {
       const word = grid.answers[d][i]
       const clueNum = +clue.match(/^ *[0-9]+/)[0].trim()
       const clueText = decode(clue.replace(/^ *[0-9]*\. */, ''))
+      const disable = !clueText.includes("_")
       return (
           <TextField
-            key={i}
+            key={`${i}-${word}-${clueText}`}
             label={`${clueNum}: ${word}`}
             defaultValue={clueText}
             className={classes.textField}

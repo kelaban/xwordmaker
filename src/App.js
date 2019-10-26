@@ -289,6 +289,30 @@ const makePuzzle = (size) => {
   })
 }
 
+function parseWordToClue(grid) {
+  const newWordToClue = {}
+  if (grid.answers) {
+    grid.answers.down.reduce((acc, w, i) => {
+      let ww = (grid.clues.down[i] || '').replace(/^ *[0-9]*\. */, '')
+      acc[w] = ww
+      return acc
+    }, newWordToClue)
+    grid.answers.across.reduce((acc, w, i) => {
+      acc[w] = (grid.clues.across[i] || '').replace(/^ *[0-9]*\. */, '')
+      return acc
+    }, newWordToClue)
+  }
+
+  return newWordToClue
+}
+
+const initialGridState = function intialGridState() {
+    const grid = JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15})
+    const wordToClue = parseWordToClue(grid)
+
+    return {grid, wordToClue}
+}()
+
 
 function App() {
   const classes = useStyles()
@@ -297,11 +321,27 @@ function App() {
     selected: null,
     currentWord: {word: "", direction: DIRECTION_ACROSS, coordinates: []}
   })
-  const [grid, updateGridState] = useState(JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15}))
-  const [wordToClue, setWordToClue] = useState({})
+  // TODO there is some broken with load grid. Try moving grid to encapsulate both wordToClue and grid in the same state object
+  const [gridState, updateAllGridState] = useState(initialGridState)
+  const {wordToClue, grid} = gridState
+
   const [gridFocus, setGridFocus] = useState(false)
 
   const {selected, currentWord} = motionState
+
+  const updateGridState = (nextGrid) => {
+    updateAllGridState({
+      ...gridState,
+      grid: nextGrid
+    })
+  }
+
+  const setWordToClue = (nextWordToClue) => {
+    updateAllGridState({
+      ...gridState,
+      wordToClue: nextWordToClue
+    })
+  }
 
   const setCurrentWord = (currentWord) => {
     setMotionState({
@@ -331,8 +371,6 @@ function App() {
   },
     [selected, currentWord.direction]
   )
-
-  console.log(grid)
 
 
   const setSelected = (nextSelected) => {
@@ -394,18 +432,10 @@ function App() {
     reader.onload = function(){
       let text = reader.result;
       const newGrid = JSON.parse(text)
-      const newWordToClue = {}
-      newGrid.answers.down.reduce((acc, w, i) => {
-        let ww = (newGrid.clues.down[i] || '').replace(/^ *[0-9]*\. */, '')
-        acc[w] = ww
-        return acc
-      }, newWordToClue)
-      newGrid.answers.across.reduce((acc, w, i) => {
-        acc[w] = (newGrid.clues.across[i] || '').replace(/^ *[0-9]*\. */, '')
-        return acc
-      }, newWordToClue)
-      updateGridState(newGrid)
-      setWordToClue(newWordToClue)
+      updateAllGridState({
+        grid: newGrid,
+        wordToClue: parseWordToClue(newGrid)
+      })
     };
 
     reader.readAsText(input.files[0]);
