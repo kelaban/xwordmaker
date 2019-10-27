@@ -41,7 +41,7 @@ export default memo(function Clues({grid, onClueFocus, onClueChanged}) {
               margin="dense"
               variant="outlined"
               fullWidth
-              onFocus={handleFocus(dir, clueNum)}
+              onClick={handleFocus(dir, clueNum)}
               onBlur={handleUpdateWord(dir, word)}
               disabled={disabled}
               error={error}

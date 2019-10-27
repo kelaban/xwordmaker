@@ -114,9 +114,17 @@ const GridStats = ({grid}) => {
 }
 
 
+let WORDLIST = null
+
 const WordList = memo(({currentWord, onClick}) => {
-  const [words, setWords] = useState([])
+  const [words, setWordsState] = useState(WORDLIST || [])
   const [filtered, setFiltered] = useState([])
+
+  const setWords = (words) => {
+    //cache wordlist incase component unmounts
+    WORDLIST = words
+    setWordsState(words)
+  }
 
   useEffect(() => {
     fetch(`${process.env.PUBLIC_URL}/wordlist/wordlist.txt`)
@@ -164,11 +172,12 @@ function TabPanel(props) {
 
   let style = {}
   let hidden = value !== index
+
   if (hidden) {
-    style['display'] = "none"
+    return <div></div>
   }
 
-  return <div style={style}>
+  return <div>
     {children}
   </div>
 }
@@ -286,15 +295,18 @@ const makePuzzle = (size) => {
 function parseWordToClue(grid) {
   const newWordToClue = {}
   if (grid.answers) {
-    grid.answers.down.reduce((acc, w, i) => {
-      let ww = (grid.clues.down[i] || '').replace(/^ *[0-9]*\. */, '')
-      acc[w] = ww
-      return acc
-    }, newWordToClue)
-    grid.answers.across.reduce((acc, w, i) => {
-      acc[w] = (grid.clues.across[i] || '').replace(/^ *[0-9]*\. */, '')
-      return acc
-    }, newWordToClue)
+    const parse = dir => {
+      grid.answers[dir]
+      .filter(w => !w.match('_'))
+      .reduce((acc, w, i) => {
+        let ww = (grid.clues[dir][i] || '').replace(/^ *[0-9]*\. */, '')
+        acc[w] = ww
+        return acc
+      }, newWordToClue)
+    }
+
+    parse('down')
+    parse('across')
   }
 
   return newWordToClue
@@ -307,15 +319,13 @@ const initialGridState = function intialGridState() {
     return {grid, wordToClue}
 }()
 
+const currentWordInitialState = {word: "", direction: DIRECTION_ACROSS, coordinates: []}
+
 
 function App() {
   const classes = useStyles()
   const [tabValue, handleTabChanged] = useState(0)
-  const [motionState, setMotionState] = useState({
-    selected: null,
-    currentWord: {word: "", direction: DIRECTION_ACROSS, coordinates: []}
-  })
-  // TODO there is some broken with load grid. Try moving grid to encapsulate both wordToClue and grid in the same state object
+  const [motionState, setMotionState] = useState({selected: null, currentWord: currentWordInitialState})
   const [gridState, updateAllGridState] = useState(initialGridState)
   const {wordToClue, grid} = gridState
 
@@ -404,6 +414,10 @@ function App() {
 
     setMotionState((prevState) => ({
       ...prevState,
+      currentWord: {
+        ...currentWordInitialState,
+        direction,
+      },
       selected,
     }))
   }, [grid])
