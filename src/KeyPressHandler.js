@@ -94,7 +94,7 @@ export default function KeyPressHandler(props) {
         grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = ""
 
         movement.moveBack()
-        updateGrid(grid.grid)
+        updateGrid(grid)
       } else if(e.key.match(/^[a-z0-9]$/i)) {
         let k = e.key.toUpperCase()
         if (e.ctrlKey) {
@@ -103,12 +103,12 @@ export default function KeyPressHandler(props) {
           grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = k
           movement.moveForward()
         }
-        updateGrid(grid.grid)
+        updateGrid(grid)
       } else if(e.key === BLOCKED_SQUARE) {
         grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = e.key
         grid.grid[coord2dTo1d(grid, height - selected.row - 1, width - selected.column - 1)] = e.key
         movement.moveForward()
-        updateGrid(grid.grid)
+        updateGrid(grid)
       } else if (e.key === ' ') {
         setCurrentWord(Object.assign({}, currentWord, {
           direction: currentWord.direction === DIRECTION_ACROSS ? DIRECTION_DOWN : DIRECTION_ACROSS

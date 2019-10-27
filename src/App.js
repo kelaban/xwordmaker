@@ -331,21 +331,29 @@ function App() {
 
   const updateGridState = (nextGrid, extraState) => {
     extraState = extraState || {}
-    updateAllGridState((prevState) => ({
-      ...prevState,
-      ...extraState,
-      grid: nextGrid
-    }))
+    updateAllGridState((prevState) => {
+      let nextState = {
+        ...prevState,
+        ...extraState,
+        grid: nextGrid
+      }
+      nextState.grid = {...nextState.grid, ...calcNumbersAndAnswers(nextState.grid, nextState.wordToClue)}
+      return nextState
+    })
   }
 
   const updateWordToClue = (word, clue) => {
-    updateAllGridState((prevState) => ({
+    updateAllGridState((prevState) => {
+      let nextState = {
         ...prevState,
         wordToClue: {
           ...prevState.wordToClue,
           [word]: clue
         }
-    }))
+      }
+      nextState.grid = {...nextState.grid, ...calcNumbersAndAnswers(nextState.grid, nextState.wordToClue)}
+      return nextState
+    })
   }
 
   const setCurrentWord = (currentWord) => {
@@ -355,20 +363,12 @@ function App() {
     })
   }
 
-  const updateGridStorageAndState = (nextGrid, extraState) => {
-    localStorage.setItem("grid", JSON.stringify(nextGrid))
-    updateGridState(nextGrid, extraState)
-  }
-
-  // updateGrid only updates the grid section of grid
-  const updateGrid = (nextGrid) => {
-    updateGridStorageAndState(Object.assign({}, grid, {grid: [...nextGrid]}))
-  }
+    //updateGridStorageAndState(Object.assign({}, grid, )
 
   useEffect(() => {
-    updateGridStorageAndState(Object.assign({}, grid, calcNumbersAndAnswers(grid, wordToClue)))
+    localStorage.setItem("grid", JSON.stringify(grid))
   },
-    [grid.grid, wordToClue]
+    [grid, wordToClue]
   )
 
   useEffect(() => {
@@ -437,7 +437,7 @@ function App() {
     reader.onload = function(){
       let text = reader.result;
       const newGrid = JSON.parse(text)
-      updateGridStorageAndState(newGrid, {
+      updateGridState(newGrid, {
         wordToClue: parseWordToClue(newGrid)
       })
     };
@@ -458,7 +458,7 @@ function App() {
     currentWord.coordinates.forEach((coord, i) => {
       grid.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
     })
-    updateGrid(grid.grid)
+    updateGridState(grid)
   }, [grid, currentWord])
 
 
@@ -471,7 +471,7 @@ function App() {
     setCurrentWord,
     currentWord,
     grid,
-    updateGrid,
+    updateGrid: updateGridState,
     hasFocus: gridFocus
   }
 
