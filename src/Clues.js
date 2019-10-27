@@ -1,7 +1,6 @@
-import React, { Component, memo } from 'react';
+import React, { memo } from 'react';
 
 import {
-  isDirectionAcross,
   DIRECTION_ACROSS,
   DIRECTION_DOWN,
 }  from './constants';
