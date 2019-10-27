@@ -30,6 +30,7 @@
 
 .Grid-item-blocked {
   background-color: black;
+  box-shadow: inset 0 0 0 1000px black;
 }
 
 .Grid-item-selected {

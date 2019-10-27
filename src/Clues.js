@@ -9,7 +9,7 @@ import TextField from '@material-ui/core/TextField';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 
-function decode(input)
+export function decode(input)
 {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;

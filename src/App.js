@@ -4,7 +4,8 @@ import './App.css';
 import XGrid from './XGrid'
 import NewPuzzleForm from './NewPuzzleForm'
 import KeyPressHandler from './KeyPressHandler'
-import Clues from './Clues'
+import Clues, {decode} from './Clues'
+import PrintView from './Print'
 import {
   isDirectionAcross,
   isBlockedSquare,
@@ -322,8 +323,10 @@ const initialGridState = function intialGridState() {
 const currentWordInitialState = {word: "", direction: DIRECTION_ACROSS, coordinates: []}
 
 
+
 function App() {
   const classes = useStyles()
+  const [isPrint, setIsPrint] = useState(false)
   const [tabValue, handleTabChanged] = useState(0)
   const [motionState, setMotionState] = useState({selected: null, currentWord: currentWordInitialState})
   const [gridState, updateAllGridState] = useState(initialGridState)
@@ -476,6 +479,19 @@ function App() {
     updateGrid: updateGridState,
     hasFocus: gridFocus
   }
+
+  useEffect(() => {
+    const listener = (e) => setIsPrint(e.matches)
+    window.matchMedia("print").addListener(listener)
+    window.onbeforeprint = () => setIsPrint(true)
+    window.onafterprint = () => setIsPrint(false)
+  }, [])
+
+  if (isPrint) {
+    return <PrintView grid={grid} />
+  }
+
+
 
   return (
     <div className="App">
