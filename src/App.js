@@ -1,6 +1,5 @@
-import React, { Component, memo, useState, useEffect, useCallback } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
-import logo from './logo.svg';
 import './App.css';
 import XGrid from './XGrid'
 import NewPuzzleForm from './NewPuzzleForm'
@@ -11,7 +10,6 @@ import {
   isBlockedSquare,
   DIRECTION_ACROSS,
   DIRECTION_DOWN,
-  BLOCKED_SQUARE
 }  from './constants';
 import { coord2dTo1d, valFrom2d } from './helpers';
 
@@ -31,7 +29,6 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import SaveAlt from '@material-ui/icons/SaveAlt';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
-import AddIcon from '@material-ui/icons/Add';
 
 
 const useStyles = makeStyles(theme => ({
@@ -133,7 +130,7 @@ const WordList = memo(({currentWord, onClick}) => {
   useEffect(() => {
     const query = new RegExp("^"+currentWord.word+"$", "i")
     setFiltered(words.filter(w => w.match(query)))
-  }, [currentWord.word])
+  }, [words, currentWord.word])
 
   const max = 100
 
@@ -228,14 +225,14 @@ function calcNumbersAndAnswers(grid, wordToClue) {
   return out;
 }
 
-function calcCurrentWord({currentWord, grid, selected}) {
-    if (!selected) { return currentWord }
+function calcCurrentWord({direction, grid, selected}) {
+    if (!selected) { return null }
 
-    const valFor = (x) => isDirectionAcross(currentWord.direction) ? valFrom2d(grid, selected.row, x) : valFrom2d(grid, x, selected.column)
-    const coordinatesFor = (x) => isDirectionAcross(currentWord.direction) ? [selected.row, x] : [x, selected.column]
-    const isNotEnd = (end) => isDirectionAcross(currentWord.direction) ? end < grid.size.cols : end < grid.size.rows
+    const valFor = (x) => isDirectionAcross(direction) ? valFrom2d(grid, selected.row, x) : valFrom2d(grid, x, selected.column)
+    const coordinatesFor = (x) => isDirectionAcross(direction) ? [selected.row, x] : [x, selected.column]
+    const isNotEnd = (end) => isDirectionAcross(direction) ? end < grid.size.cols : end < grid.size.rows
 
-    let start = isDirectionAcross(currentWord.direction) ? selected.column : selected.row;
+    let start = isDirectionAcross(direction) ? selected.column : selected.row;
     let end = start
 
     // Find beginning
@@ -257,10 +254,7 @@ function calcCurrentWord({currentWord, grid, selected}) {
       coordinates.push(coordinatesFor(i))
     }
 
-    return Object.assign({}, currentWord, {
-      word,
-      coordinates
-    })
+    return { word, coordinates }
 }
 
 // Format specified by https://www.xwordinfo.com/JSON/
@@ -356,14 +350,15 @@ function App() {
     })
   }
 
-  const setCurrentWord = (currentWord) => {
-    setMotionState({
-      ...motionState,
-      currentWord
-    })
-  }
-
-    //updateGridStorageAndState(Object.assign({}, grid, )
+  const setCurrentWord = useCallback((currentWord) => {
+    setMotionState((prevState) => ({
+      ...prevState,
+      currentWord: {
+        ...prevState.currentWord,
+        ...currentWord
+      }
+    }))
+  }, [])
 
   useEffect(() => {
     localStorage.setItem("grid", JSON.stringify(grid))
@@ -372,10 +367,9 @@ function App() {
   )
 
   useEffect(() => {
-    setCurrentWord(calcCurrentWord({selected, currentWord, grid}))
-  },
-    [selected, currentWord.direction]
-  )
+    const nextCw = calcCurrentWord({selected, direction: currentWord.direction, grid})
+    nextCw && setCurrentWord(nextCw)
+  }, [setCurrentWord, selected, grid, currentWord.direction])
 
 
   const setSelected = (nextSelected) => {
@@ -396,11 +390,6 @@ function App() {
   }
 
   const handleClueFocus = useCallback((direction, clueNum) => {
-    const nextCurrentWord = {
-      ...currentWord,
-      direction
-    }
-
     let selected = {}
     for(let i=0; i<grid.gridnums.length; ++i) {
       if(grid.gridnums[i] == clueNum) {
@@ -416,7 +405,6 @@ function App() {
     setMotionState((prevState) => ({
       ...prevState,
       selected,
-      currentWord: nextCurrentWord
     }))
   }, [grid])
 
