@@ -12,11 +12,10 @@ export default function Grid({grid, selected, currentWord, hideAnswers, onClick}
         const val =  grid.grid[i]
         const isSelected = selected && selected.row === row && selected.column === column
         let classNames = ["Grid-item"]
-        if (isBlockedSquare(val)) {
-          classNames.push("Grid-item-blocked")
-        }
-        if (isSelected) {
+        if(isSelected) {
           classNames.push("Grid-item-selected")
+        } else if (isBlockedSquare(val)) {
+          classNames.push("Grid-item-blocked")
         } else if (currentWord && currentWord.coordinates.some(i => i[0] === row && i[1] === column)) {
           classNames.push("Grid-item-highlight")
         }

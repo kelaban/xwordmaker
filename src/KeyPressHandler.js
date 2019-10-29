@@ -96,6 +96,7 @@ export default function KeyPressHandler(props) {
         movement.moveBack()
         updateGrid(grid)
       } else if(e.key.match(/^[a-z0-9]$/i)) {
+        //TODO handle rotational symmetry here if the old letter is a blocked square
         let k = e.key.toUpperCase()
         if (e.ctrlKey) {
           grid.grid[coord2dTo1d(grid, selected.row, selected.column)] += k

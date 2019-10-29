@@ -390,6 +390,7 @@ function App() {
   const setSelected = (nextSelected) => {
     let nextCurrentWord = motionState.currentWord
 
+    //swap direction if selected is double clicked
     if(nextSelected && selected && nextSelected.row === selected.row && nextSelected.column === selected.column) {
       nextCurrentWord = {
         ...nextCurrentWord,
