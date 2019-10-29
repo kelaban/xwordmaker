@@ -46,9 +46,6 @@ const useStyles = makeStyles(theme => ({
     paddingTop: 32,
   },
   paper: {
-    "&:focus": {
-      outline: 0,
-    },
     padding: 10,
   },
   gridPaper: {
@@ -334,7 +331,6 @@ function App() {
   const [gridState, updateAllGridState] = useState(initialGridState)
   const {wordToClue, grid} = gridState
 
-  const [gridFocus, setGridFocus] = useState(false)
 
   const {selected, currentWord} = motionState
 
@@ -458,10 +454,6 @@ function App() {
     setSelected()
   }
 
-  const handleFocus = hasFocus => e => {
-    setGridFocus(hasFocus)
-  }
-
   const handleWordListClicked = useCallback(word => {
     currentWord.coordinates.forEach((coord, i) => {
       grid.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
@@ -480,7 +472,6 @@ function App() {
     currentWord,
     grid,
     updateGrid: updateGridState,
-    hasFocus: gridFocus
   }
 
   useEffect(() => {
@@ -512,9 +503,11 @@ function App() {
   let gridComponent = null
 
   const _gridComponent = (
-    <Paper className={clsGridPaper} onFocus={handleFocus(true)} onBlur={handleFocus(false)} tabindex="0">
-      <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
-    </Paper>
+    <KeyPressHandler {...kphProps}>
+      <Paper className={clsGridPaper} >
+        <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
+      </Paper>
+    </KeyPressHandler>
   )
 
   if (separateGrid) {
@@ -563,7 +556,6 @@ function App() {
         <NewPuzzleForm onSave={handleCreateNewPuzzle}/>
        </Toolbar>
       </AppBar>
-      <KeyPressHandler {...kphProps} />
       <Container className={classes.container}>
         <Grid container spacing={2}>
         { separateGrid && (

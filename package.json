@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "http://k317h.com/xwordmaker",
   "dependencies": {
+    "mousetrap": "^1.6.3",
     "react": "^16.10.2",
     "react-dom": "^16.10.2",
     "react-scripts": "3.2.0"
