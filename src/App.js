@@ -16,7 +16,8 @@ import { coord2dTo1d, valFrom2d } from './helpers';
 
 import { saveAs } from 'file-saver';
 
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
+import useMediaQuery from '@material-ui/core/useMediaQuery';
 import Paper from '@material-ui/core/Paper';
 import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
@@ -326,6 +327,7 @@ const currentWordInitialState = {word: "", direction: DIRECTION_ACROSS, coordina
 
 function App() {
   const classes = useStyles()
+  const theme = useTheme()
   const [isPrint, setIsPrint] = useState(false)
   const [tabValue, handleTabChanged] = useState(0)
   const [motionState, setMotionState] = useState({selected: null, currentWord: currentWordInitialState})
@@ -487,11 +489,47 @@ function App() {
     window.onafterprint = () => setIsPrint(false)
   }, [])
 
+  const separateGrid = useMediaQuery(theme.breakpoints.up('lg'))
+
   if (isPrint) {
     return <PrintView grid={grid} />
   }
 
+  let tabs = [
+    {label: "Word List", children: (
+      <Paper className={clsScrollPaper} >
+        <WordList onClick={handleWordListClicked} currentWord={currentWord}/>
+      </Paper>
+    )},
+    {label: "Clues", children: (
+      <Paper className={clsScrollPaper} >
+        <Clues grid={grid} onClueFocus={handleClueFocus} onClueChanged={handleClueChanged}/>
+      </Paper>
+    )},
+  ]
 
+  let gridComponent = null
+
+  const _gridComponent = (
+    <Paper className={clsGridPaper} onFocus={handleFocus(true)} onBlur={handleFocus(false)} tabindex="0">
+      <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
+    </Paper>
+  )
+
+  if (separateGrid) {
+    gridComponent = _gridComponent
+  } else {
+    tabs = [{label: "Grid", children: _gridComponent}, ...tabs]
+  }
+
+  const renderedTabs = (
+    <React.Fragment>
+      <Tabs value={tabValue} onChange={(e,nv) => handleTabChanged(nv)}>
+        {tabs.map(t => <Tab key={t.label} label={t.label}/>)}
+      </Tabs>
+      {tabs.map((t,i) => <TabPanel key={t.label} value={tabValue} index={i}>{t.children}</TabPanel>)}
+    </React.Fragment>
+  )
 
   return (
     <div className="App">
@@ -527,26 +565,13 @@ function App() {
       <KeyPressHandler {...kphProps} />
       <Container className={classes.container}>
         <Grid container spacing={2}>
-          <Grid item xs>
-            <Paper className={clsGridPaper} onFocus={handleFocus(true)} onBlur={handleFocus(false)} tabindex="0">
-              <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
-            </Paper>
+        { separateGrid && (
+          <Grid item lg={6} >
+            {gridComponent}
           </Grid>
-          <Grid item xs={6}>
-            <Tabs value={tabValue} onChange={(e,nv) => handleTabChanged(nv)}>
-              <Tab label="Word List"/>
-              <Tab label="Clues"/>
-            </Tabs>
-            <TabPanel value={tabValue} index={0}>
-            <Paper className={clsScrollPaper} >
-              <WordList onClick={handleWordListClicked} currentWord={currentWord}/>
-            </Paper>
-            </TabPanel>
-            <TabPanel value={tabValue} index={1}>
-            <Paper className={clsScrollPaper} >
-              <Clues grid={grid} onClueFocus={handleClueFocus} onClueChanged={handleClueChanged}/>
-            </Paper>
-            </TabPanel>
+        )}
+          <Grid item lg={6}>
+            {renderedTabs}
           </Grid>
         </Grid>
       </Container>
