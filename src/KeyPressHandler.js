@@ -4,7 +4,9 @@ import {
   isBlockedSquare,
   DIRECTION_ACROSS,
   DIRECTION_DOWN,
-  BLOCKED_SQUARE
+  BLOCKED_SQUARE,
+  UNDO_ACTION,
+  REDO_ACTION
 }  from './constants';
 import {
 coord2dTo1d,
@@ -14,6 +16,8 @@ valFrom2d
 import mousetrap from 'mousetrap'
 
 import { makeStyles } from '@material-ui/core/styles';
+
+import {cloneDeep} from 'lodash';
 
 
 class Movement {
@@ -75,7 +79,7 @@ class KeyPressHandler {
     this.setSelected = props.setSelected
     this.currentWord = props.currentWord
     this.setCurrentWord = props.setCurrentWord
-    this.grid = props.grid
+    this.grid = cloneDeep(props.grid)
     this.updateGrid = props.updateGrid
     this.rows = props.grid.size.rows
     this.cols = props.grid.size.cols
@@ -121,6 +125,11 @@ class KeyPressHandler {
       updateGrid(grid)
     } else {
       const old = valFrom2d(grid, selected.row, selected.column)
+      if (old === k) {
+        // don't issue grid update if its the same letter
+        movement.moveForward()
+        return
+      }
       if (isBlockedSquare(old)) {
         this.setRotationalSymettry('')
       }
@@ -152,6 +161,15 @@ class KeyPressHandler {
   handleDown = () => {
     this.movement.down()
   }
+
+  handleUndo = () => {
+    this.updateGrid(UNDO_ACTION)
+  }
+
+  handleRedo = () => {
+    this.updateGrid(REDO_ACTION)
+  }
+
 }
 
 const MOVE_UP = 'MOVE_UP'
@@ -161,6 +179,8 @@ const MOVE_DOWN = 'MOVE_DOWN'
 const ENTER_LETTER = 'ENTER_LETTER'
 const BACKSPACE = 'BACKSPACE'
 const SPACE = 'SPACE'
+const UNDO = 'UNDO'
+const REDO = 'REDO'
 
 const keyMap = {
   [MOVE_UP]: 'up',
@@ -169,7 +189,9 @@ const keyMap = {
   [MOVE_RIGHT]: 'right',
   [ENTER_LETTER]: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.".split(''),
   [BACKSPACE]: ['del', 'backspace'],
-  [SPACE]: 'space'
+  [SPACE]: 'space',
+  [UNDO]: 'mod+z',
+  [REDO]: 'mod+shift+z',
 }
 
 const useStyles = makeStyles(theme => ({
@@ -196,6 +218,8 @@ export default function KeyPressHandlerComponent(props) {
     [ENTER_LETTER]: kph.handleLetter,
     [BACKSPACE]: kph.handleBackspace,
     [SPACE]: kph.handleSpace,
+    [UNDO]: kph.handleUndo,
+    [REDO]: kph.handleRedo,
   }
 
   const handleFocus = _hasFocus => e => {
@@ -217,7 +241,7 @@ export default function KeyPressHandlerComponent(props) {
 
 
   return (
-    <div className={classes.noOutline} onFocus={handleFocus(true)} onBlur={handleFocus(false)} tabIndex="-1">
+    <div ref={props.forwardRef} className={classes.noOutline} onFocus={handleFocus(true)} onBlur={handleFocus(false)} tabIndex="-1">
       {props.children}
     </div>
   )

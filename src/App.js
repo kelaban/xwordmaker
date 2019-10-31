@@ -11,6 +11,8 @@ import {
   isBlockedSquare,
   DIRECTION_ACROSS,
   DIRECTION_DOWN,
+  UNDO_ACTION,
+  REDO_ACTION
 }  from './constants';
 import { coord2dTo1d, valFrom2d } from './helpers';
 
@@ -31,6 +33,8 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import SaveAlt from '@material-ui/icons/SaveAlt';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+
+import {cloneDeep, debounce} from 'lodash';
 
 
 const useStyles = makeStyles(theme => ({
@@ -119,6 +123,10 @@ const WordList = memo(({currentWord, onClick}) => {
     setWordsState(words)
   }
 
+  const debouncedFilter = useCallback(debounce( query => {
+    setFiltered(words.filter(w => w.match(query)))
+  }, 300), [words])
+
   useEffect(() => {
     fetch(`${process.env.PUBLIC_URL}/wordlist/wordlist.txt`)
       .then(resp => resp.text())
@@ -129,8 +137,7 @@ const WordList = memo(({currentWord, onClick}) => {
   }, [])
 
   useEffect(() => {
-    const query = new RegExp("^"+currentWord.word+"$", "i")
-    setFiltered(words.filter(w => w.match(query)))
+    debouncedFilter(new RegExp("^"+currentWord.word+"$", "i"))
   }, [words, currentWord.word])
 
   const max = 100
@@ -285,7 +292,7 @@ const makePuzzle = (size) => {
   })
 }
 
-function parseWordToClue(grid) {
+function parseWordToClue(grid) {;
   const newWordToClue = {}
   if (grid.answers) {
     const parse = dir => {
@@ -308,15 +315,16 @@ function parseWordToClue(grid) {
 const initialGridState = function intialGridState() {
     const grid = JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15})
     const wordToClue = parseWordToClue(grid)
+    const history = JSON.parse(localStorage.getItem("history")) || {undo: [], redo: []}
 
-    return {grid, wordToClue}
+    return {grid, wordToClue, history}
 }()
 
 const currentWordInitialState = {word: "", direction: DIRECTION_ACROSS, coordinates: []}
 
+const gridRef = React.createRef();
 function ReactiveGrid({children}) {
   let [width, setWidth] = useState("100%")
-  let gridRef = React.createRef();
 
   const handleResize = () => {
     gridRef.current && setWidth(gridRef.current.clientWidth)
@@ -339,6 +347,10 @@ function ReactiveGrid({children}) {
 
 }
 
+const MAX_HISTORY = 25
+
+const hotKeyRef = React.createRef()
+
 
 function App() {
   const classes = useStyles()
@@ -347,36 +359,79 @@ function App() {
   const [tabValue, handleTabChanged] = useState(0)
   const [motionState, setMotionState] = useState({selected: null, currentWord: currentWordInitialState})
   const [gridState, updateAllGridState] = useState(initialGridState)
-  const {wordToClue, grid} = gridState
+  const {wordToClue, grid, history} = gridState
 
 
   const {selected, currentWord} = motionState
 
-  const updateGridState = (nextGrid, extraState) => {
-    extraState = extraState || {}
+  //cb can be a function which recieves the previous state
+  // or a string which is either the UNDO or REDO action
+  const updateAllGridStateFromPrevious = (cb) => {
     updateAllGridState((prevState) => {
-      let nextState = {
-        ...prevState,
-        ...extraState,
-        grid: nextGrid
+      let nextState = null
+      switch(cb) {
+        case UNDO_ACTION:
+          nextState = {...prevState}
+          const past = prevState.history.undo
+          if (!past.length) {
+            break
+          }
+          const previous = past[past.length - 1]
+          const newPast = past.slice(0, past.length - 1)
+          nextState.grid = previous
+          nextState.history = {
+            undo: newPast,
+            redo: [prevState.grid, ...prevState.history.redo]
+          }
+          break;
+        case REDO_ACTION:
+          nextState = {...prevState}
+          const future = prevState.history.redo
+          if (!future.length) {
+            break
+          }
+          const next = future[0]
+          const newFuture = future.slice(1)
+          nextState.grid = next
+          nextState.history = {
+            undo: [...prevState.history.undo, prevState.grid],
+            redo: newFuture
+          }
+          break;
+        default:
+          nextState = cb(prevState)
+          nextState.grid = {...nextState.grid, ...calcNumbersAndAnswers(nextState.grid, nextState.wordToClue)}
+          nextState.history.undo = nextState.history.undo.slice(0, MAX_HISTORY)
+          nextState.history.undo.push(prevState.grid)
+          nextState.history.redo = []
       }
-      nextState.grid = {...nextState.grid, ...calcNumbersAndAnswers(nextState.grid, nextState.wordToClue)}
+
       return nextState
     })
   }
 
+
+  const updateGridState = (nextGrid, extraState) => {
+    if (nextGrid === UNDO_ACTION || nextGrid === REDO_ACTION) {
+      updateAllGridStateFromPrevious(nextGrid)
+    } else {
+      extraState = extraState || {}
+      updateAllGridStateFromPrevious((prevState) => ({
+        ...prevState,
+        ...extraState,
+        grid: nextGrid
+      }))
+    }
+  }
+
   const updateWordToClue = (word, clue) => {
-    updateAllGridState((prevState) => {
-      let nextState = {
+    updateAllGridStateFromPrevious((prevState) => ({
         ...prevState,
         wordToClue: {
           ...prevState.wordToClue,
           [word]: clue
         }
-      }
-      nextState.grid = {...nextState.grid, ...calcNumbersAndAnswers(nextState.grid, nextState.wordToClue)}
-      return nextState
-    })
+    }))
   }
 
   const setCurrentWord = useCallback((currentWord) => {
@@ -391,8 +446,9 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem("grid", JSON.stringify(grid))
+    localStorage.setItem("history", JSON.stringify(history))
   },
-    [grid, wordToClue]
+    [grid, history]
   )
 
   useEffect(() => {
@@ -454,6 +510,9 @@ function App() {
   // TODO handle failure and validate puzzle format
   const handleImportPuzzle = (e) => {
     let input = e.target;
+    if (!input.value) {
+      return;
+    }
 
     let reader = new FileReader();
     reader.onload = function(){
@@ -465,6 +524,7 @@ function App() {
     };
 
     reader.readAsText(input.files[0]);
+    input.value = '';
   }
 
   const handleCreateNewPuzzle = (size) => {
@@ -473,10 +533,12 @@ function App() {
   }
 
   const handleWordListClicked = useCallback(word => {
+    const gridCopy = cloneDeep(grid)
     currentWord.coordinates.forEach((coord, i) => {
-      grid.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
+      gridCopy.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
     })
-    updateGridState(grid)
+    hotKeyRef.current.focus()
+    updateGridState(gridCopy)
   }, [grid, currentWord])
 
 
@@ -490,6 +552,7 @@ function App() {
     currentWord,
     grid,
     updateGrid: updateGridState,
+    forwardRef: hotKeyRef,
   }
 
   useEffect(() => {
