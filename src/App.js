@@ -48,12 +48,6 @@ const useStyles = makeStyles(theme => ({
   paper: {
     padding: 10,
   },
-  gridPaper: {
-    width: "75vmin",
-    height: "75vmin",
-    //clear the width
-    float: "left"
-  },
   scroll: {
     overflow: "scroll",
     maxHeight: "calc(100vh - 180px)",
@@ -320,6 +314,30 @@ const initialGridState = function intialGridState() {
 
 const currentWordInitialState = {word: "", direction: DIRECTION_ACROSS, coordinates: []}
 
+function ReactiveGrid({children}) {
+  let [width, setWidth] = useState("100%")
+  let gridRef = React.createRef();
+
+  const handleResize = () => {
+    gridRef.current && setWidth(gridRef.current.clientWidth)
+  }
+
+  useEffect(() => {
+    // add event listener then call function on first render to ensure size is correct
+    window.addEventListener('resize', handleResize)
+    handleResize()
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  return (
+    <div ref={gridRef} style={{width: width, height: width}}>
+      {children}
+    </div>
+  )
+
+}
 
 
 function App() {
@@ -462,7 +480,7 @@ function App() {
   }, [grid, currentWord])
 
 
-  const clsGridPaper = clsx(classes.paper, classes.gridPaper)
+  const clsGridPaper = clsx(classes.paper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
 
   const kphProps = {
@@ -505,7 +523,9 @@ function App() {
   const _gridComponent = (
     <KeyPressHandler {...kphProps}>
       <Paper className={clsGridPaper} >
-        <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
+        <ReactiveGrid>
+          <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
+        </ReactiveGrid>
       </Paper>
     </KeyPressHandler>
   )
