@@ -41,7 +41,7 @@ function Clue({word, clue, dir, currentWord, onClick, onBlur}) {
         variant="outlined"
         fullWidth
         onClick={onClick(dir, clueNum)}
-        onBlur={onBlur(dir, clueNum)}
+        onBlur={onBlur(dir, word)}
         disabled={disabled}
         error={error}
         InputLabelProps={{className}}
