@@ -2,7 +2,7 @@ import React, { memo, useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import './App.css';
 import XGrid from './XGrid'
-import NewPuzzleForm from './NewPuzzleForm'
+import Toolbar from './Toolbar'
 import KeyPressHandler from './KeyPressHandler'
 import Clues, {decode} from './Clues'
 import PrintView from './Print'
@@ -27,12 +27,6 @@ import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import Button from '@material-ui/core/Button';
-import SaveAlt from '@material-ui/icons/SaveAlt';
-import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 
 import {cloneDeep, debounce} from 'lodash';
 
@@ -612,35 +606,11 @@ function App() {
 
   return (
     <div className="App">
-      <AppBar position="static">
-       <Toolbar>
-        <Typography variant="h6" className={classes.title}>
-          XWordMaker
-        </Typography>
-        <Button
-          aria-label="Save puzzle"
-          color="inherit"
-          startIcon={<SaveAlt />}
-          onClick={handleSavePuzzle}
-        >
-          Save Puzzle
-        </Button>
-        <Button
-          aria-label="Load puzzle"
-          color="inherit"
-          component="label"
-          startIcon={<ArrowUpwardIcon />}
-        >
-          Load Puzzle
-          <input
-            type="file"
-            style={{ display: "none" }}
-            onChange={handleImportPuzzle}
-            />
-        </Button>
-        <NewPuzzleForm onSave={handleCreateNewPuzzle}/>
-       </Toolbar>
-      </AppBar>
+      <Toolbar
+        handleSavePuzzle={handleSavePuzzle}
+        handleImportPuzzle={handleImportPuzzle}
+        handleCreateNewPuzzle={handleCreateNewPuzzle}
+      />
       <Container className={classes.container}>
         <Grid container spacing={2}>
         { separateGrid && (
