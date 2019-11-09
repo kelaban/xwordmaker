@@ -1,4 +1,4 @@
-import React, { Component, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   isDirectionAcross,
   isBlockedSquare,
@@ -97,7 +97,7 @@ class KeyPressHandler {
   }
 
   handleBackspace = (e) => {
-    const {grid, selected, rows, cols, movement, updateGrid} = this
+    const {grid, selected, movement, updateGrid} = this
 
     const old = valFrom2d(grid, selected.row, selected.column)
 
@@ -113,7 +113,7 @@ class KeyPressHandler {
 
   handleLetter = (e) => {
     let k = e.key.toUpperCase()
-    const {grid, selected, rows, cols, movement, updateGrid} = this
+    const {grid, selected, movement, updateGrid} = this
 
     if(e.key === BLOCKED_SQUARE) {
       grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = k

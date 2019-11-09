@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useReducer, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import './App.css';
 import XGrid from './XGrid'
@@ -13,9 +13,15 @@ import {
   DIRECTION_ACROSS,
   DIRECTION_DOWN,
   UNDO_ACTION,
-  REDO_ACTION
+  REDO_ACTION,
+  UPDATE_WORD_TO_CLUE,
+  UPDATE_GRID,
 }  from './constants';
+
 import { coord2dTo1d, valFrom2d } from './helpers';
+import { reduceGridState } from './reducers'
+
+
 
 import { saveAs } from 'file-saver';
 
@@ -70,56 +76,6 @@ function TabPanel(props) {
 }
 
 
-function calcNumbersAndAnswers(grid, wordToClue) {
-  const {rows, cols} = grid.size
-  let out = {
-    gridnums: grid.grid.map(r => 0), // clone grid
-    answers: {down: [], across: []},
-    clues: {down: [], across: []}
-  }
-
-  let num = 1;
-  for (let i=0; i<rows; ++i){
-    for (let j=0; j<cols; ++j) {
-      if (isBlockedSquare(valFrom2d(grid, i, j))) continue;
-
-      const isNewDown = (i === 0 || isBlockedSquare(valFrom2d(grid,i-1,j))) && !(i === rows || isBlockedSquare(valFrom2d(grid,i+1,j)))
-      const isNewAcross = (j === 0 || isBlockedSquare(valFrom2d(grid,i,j-1))) && !(j === cols || isBlockedSquare(valFrom2d(grid,i,j+1)))
-      if(isNewAcross || isNewDown) {
-        out.gridnums[coord2dTo1d(grid, i, j)] = num++;
-      }
-
-      if(isNewAcross) {
-        let currentWord = ""
-        let start = j;
-        while(!isBlockedSquare(valFrom2d(grid,i,start)) && start < cols) {
-          let w = valFrom2d(grid, i, start)
-          currentWord += w ? w : '_'
-          start++
-        }
-        out.answers.across.push(currentWord)
-        let clue = wordToClue[currentWord] || ''
-        out.clues.across.push(`${num-1}. ${clue}`)
-      }
-
-      if(isNewDown) {
-        let currentWord = ""
-        let start = i;
-        while(!isBlockedSquare(valFrom2d(grid,start,j)) && start < rows) {
-          let w = valFrom2d(grid, start, j)
-          currentWord += w ? w : '_'
-          start++
-        }
-        out.answers.down.push(currentWord)
-        let clue = wordToClue[currentWord] || ''
-        out.clues.down.push(`${num-1}. ${clue}`)
-      }
-
-    }
-  }
-
-  return out;
-}
 
 function calcCurrentWord({direction, grid, selected}) {
     if (!selected) { return null }
@@ -200,13 +156,15 @@ function parseWordToClue(grid) {;
   return newWordToClue
 }
 
-const initialGridState = function intialGridState() {
-    const grid = JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15})
+function resetGridState(g) {
+    const grid = g || JSON.parse(localStorage.getItem("grid")) || makePuzzle({rows: 15, cols: 15})
     const wordToClue = parseWordToClue(grid)
     const history = JSON.parse(localStorage.getItem("history")) || {undo: [], redo: []}
 
     return {grid, wordToClue, history}
-}()
+}
+
+const initialGridState = resetGridState()
 
 const currentWordInitialState = {word: "", direction: DIRECTION_ACROSS, coordinates: []}
 
@@ -232,10 +190,7 @@ function ReactiveGrid({children}) {
       {children}
     </div>
   )
-
 }
-
-const MAX_HISTORY = 25
 
 const hotKeyRef = React.createRef()
 
@@ -246,81 +201,29 @@ function App() {
   const [isPrint, setIsPrint] = useState(false)
   const [tabValue, handleTabChanged] = useState(0)
   const [motionState, setMotionState] = useState({selected: null, currentWord: currentWordInitialState})
-  const [gridState, updateAllGridState] = useState(initialGridState)
-  const {wordToClue, grid, history} = gridState
-
+  const [gridState, dispatchGridStateUpdate] = useReducer(reduceGridState, initialGridState)
+  const {grid, history} = gridState
 
   const {selected, currentWord} = motionState
 
-  //cb can be a function which recieves the previous state
-  // or a string which is either the UNDO or REDO action
-  const updateAllGridStateFromPrevious = (cb) => {
-    updateAllGridState((prevState) => {
-      let nextState = null
-      switch(cb) {
-        case UNDO_ACTION:
-          nextState = {...prevState}
-          const past = prevState.history.undo
-          if (!past.length) {
-            break
-          }
-          const previous = past[past.length - 1]
-          const newPast = past.slice(0, past.length - 1)
-          nextState.grid = previous
-          nextState.history = {
-            undo: newPast,
-            redo: [prevState.grid, ...prevState.history.redo]
-          }
-          break;
-        case REDO_ACTION:
-          nextState = {...prevState}
-          const future = prevState.history.redo
-          if (!future.length) {
-            break
-          }
-          const next = future[0]
-          const newFuture = future.slice(1)
-          nextState.grid = next
-          nextState.history = {
-            undo: [...prevState.history.undo, prevState.grid],
-            redo: newFuture
-          }
-          break;
-        default:
-          nextState = cb(prevState)
-          nextState.grid = {...nextState.grid, ...calcNumbersAndAnswers(nextState.grid, nextState.wordToClue)}
-          // since history gets pushed on the the stack slice off the start of the history to keep the size small enough
-          nextState.history.undo = nextState.history.undo.slice(-MAX_HISTORY)
-          nextState.history.undo.push(prevState.grid)
-          nextState.history.redo = []
-      }
-
-      return nextState
-    })
-  }
-
-
-  const updateGridState = (nextGrid, extraState) => {
-    if (nextGrid === UNDO_ACTION || nextGrid === REDO_ACTION) {
-      updateAllGridStateFromPrevious(nextGrid)
+  const updateGridState = (nextState) => {
+    if (nextState === UNDO_ACTION || nextState === REDO_ACTION) {
+      dispatchGridStateUpdate({type: nextState})
     } else {
-      extraState = extraState || {}
-      updateAllGridStateFromPrevious((prevState) => ({
-        ...prevState,
-        ...extraState,
-        grid: nextGrid
-      }))
+      dispatchGridStateUpdate({
+        type: UPDATE_GRID,
+        payload: {grid: nextState}
+      })
     }
   }
 
   const updateWordToClue = (word, clue) => {
-    updateAllGridStateFromPrevious((prevState) => ({
-        ...prevState,
-        wordToClue: {
-          ...prevState.wordToClue,
-          [word]: clue
-        }
-    }))
+    dispatchGridStateUpdate({
+      type: UPDATE_WORD_TO_CLUE,
+      payload: {
+        [word]: clue
+      }
+    })
   }
 
   const setCurrentWord = useCallback((currentWord) => {
@@ -407,9 +310,10 @@ function App() {
     reader.onload = function(){
       let text = reader.result;
       const newGrid = JSON.parse(text)
-      updateGridState(newGrid, {
+      dispatchGridStateUpdate({type: UPDATE_GRID, payload: {
+        grid: newGrid,
         wordToClue: parseWordToClue(newGrid)
-      })
+      }})
     };
 
     reader.readAsText(input.files[0]);
@@ -417,7 +321,7 @@ function App() {
   }
 
   const handleCreateNewPuzzle = (size) => {
-    updateGridState(makePuzzle(size))
+    dispatchGridStateUpdate({type: UPDATE_GRID, payload: resetGridState(makePuzzle(size))} )
     setSelected()
   }
 
@@ -427,7 +331,7 @@ function App() {
       gridCopy.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
     })
     hotKeyRef.current.focus()
-    updateGridState(gridCopy)
+    dispatchGridStateUpdate({type: UPDATE_GRID, payload: {grid: gridCopy}})
   }, [grid, currentWord])
 
 
