@@ -255,6 +255,7 @@ function calcCurrentWord({direction, grid, selected}) {
 
     let word = ""
     let coordinates = []
+    const clueNum = grid.gridnums[coord2dTo1d(grid, coordinatesFor(start)[0], coordinatesFor(start)[1])]
 
     for(let i=start; i<end; ++i) {
       let v = valFor(i)
@@ -263,7 +264,7 @@ function calcCurrentWord({direction, grid, selected}) {
       coordinates.push(coordinatesFor(i))
     }
 
-    return { word, coordinates }
+    return { word, coordinates, clueNum }
 }
 
 // Format specified by https://www.xwordinfo.com/JSON/
@@ -576,7 +577,7 @@ function App() {
     )},
     {label: "Clues", children: (
       <Paper className={clsScrollPaper} >
-        <Clues grid={grid} onClueFocus={handleClueFocus} onClueChanged={handleClueChanged}/>
+        <Clues currentWord={currentWord} grid={grid} onClueFocus={handleClueFocus} onClueChanged={handleClueChanged}/>
       </Paper>
     )},
   ]
