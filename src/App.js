@@ -1,10 +1,11 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import './App.css';
 import XGrid from './XGrid'
 import Toolbar from './Toolbar'
+import WordList from './WordList'
 import KeyPressHandler from './KeyPressHandler'
-import Clues, {decode} from './Clues'
+import Clues from './Clues'
 import PrintView from './Print'
 import {
   isDirectionAcross,
@@ -25,10 +26,8 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
 
-import {cloneDeep, debounce} from 'lodash';
+import {cloneDeep } from 'lodash';
 
 
 const useStyles = makeStyles(theme => ({
@@ -52,119 +51,13 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const GridStats = ({grid}) => {
-  return null
-  // get {A: 0 ... Z:0)
-  const letters = [...Array(26).keys()].map(i => String.fromCharCode(i + 65)).reduce((acc, v) => ((acc[v] = 0) || acc), {})
-  // add counts of single letters
-  const letterCounts = grid.grid.map(v => v).filter(v => v && v.match(/^[A-Z]$/)).reduce((acc, v) => ((acc[v] = (acc[v] || 0) + 1) && acc), letters)
 
-  const calcWordCount = (down) => {
-    const count = {}
-    for (let i=0; i<=grid.size.rows; ++i) {
-      let len = 0
-      for (let j=0; j<=grid.size.cols; ++j) {
-        let v = down ?  valFrom2d(grid, j, i) : valFrom2d(grid, i, j)
-        if(isBlockedSquare(v)) {
-          len += 1
-        } else {
-          if (len > 0) {
-            count[len] = (count[len] || 0) + 1
-          }
-          len = 0
-        }
-      }
-      if (len > 0) {
-        count[len] = (count[len] || 0) + 1
-      }
-    }
-
-    return count
-  }
-
-  const wordLengthsAccross = calcWordCount()
-  const wordLengthsDown = calcWordCount(true)
-  const totalCount = Object.values(wordLengthsAccross).reduce((acc, v) => acc+v, 0) +
-                      Object.values(wordLengthsDown).reduce((acc, v) => acc+v, 0)
-
-  return (
-    <div>
-      {JSON.stringify(letterCounts)}
-      <br/>
-      Across
-      <br/>
-      {JSON.stringify(wordLengthsAccross)}
-      <br/>
-      Down
-      <br/>
-      {JSON.stringify(wordLengthsDown)}
-      <br/>
-      Total: {totalCount}
-    </div>
-  )
-}
-
-
-let WORDLIST = null
-
-const WordList = memo(({currentWord, onClick}) => {
-  const [words, setWordsState] = useState(WORDLIST || [])
-  const [filtered, setFiltered] = useState([])
-
-  const setWords = (words) => {
-    //cache wordlist incase component unmounts
-    WORDLIST = words
-    setWordsState(words)
-  }
-
-  const debouncedFilter = useCallback(debounce( query => {
-    setFiltered(words.filter(w => w.match(query)))
-  }, 300), [words])
-
-  useEffect(() => {
-    fetch(`${process.env.PUBLIC_URL}/wordlist/wordlist.txt`)
-      .then(resp => resp.text())
-      .then(text =>
-          text.split("\n")
-            .filter(l => !l.startsWith("#")))
-      .then(w => setWords(w))
-  }, [])
-
-  useEffect(() => {
-    debouncedFilter(new RegExp("^"+currentWord.word+"$", "i"))
-  }, [words, currentWord.word])
-
-  const max = 100
-
-  /*
-          <ListItem
-            key={w}
-            component="a"
-            target="_blank"
-            href={`https://www.anagrammer.com/crossword-clues/${w}`}>
-            */
-
-  return <div>
-    Words: {filtered.length > max ? `showing ${max}/` : ''}{filtered.length}
-    <List dense>
-      {filtered.slice(0,max).map(w =>
-          <ListItem
-            button
-            onClick={() => onClick(w)}
-            key={w}>
-            {w}
-          </ListItem>
-       )}
-    </List>
-  </div>
-})
 
 
 
 function TabPanel(props) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index } = props;
 
-  let style = {}
   let hidden = value !== index
 
   if (hidden) {
