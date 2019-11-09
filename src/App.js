@@ -402,7 +402,8 @@ function App() {
         default:
           nextState = cb(prevState)
           nextState.grid = {...nextState.grid, ...calcNumbersAndAnswers(nextState.grid, nextState.wordToClue)}
-          nextState.history.undo = nextState.history.undo.slice(0, MAX_HISTORY)
+          // since history gets pushed on the the stack slice off the start of the history to keep the size small enough
+          nextState.history.undo = nextState.history.undo.slice(-MAX_HISTORY)
           nextState.history.undo.push(prevState.grid)
           nextState.history.redo = []
       }
