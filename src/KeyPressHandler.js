@@ -120,7 +120,7 @@ class KeyPressHandler {
       this.setRotationalSymettry(k)
       movement.moveForward()
       updateGrid(grid)
-    } else if (e.ctrlKey) {
+    } else if (e.shiftKey) {
       grid.grid[coord2dTo1d(grid, selected.row, selected.column)] += k
       updateGrid(grid)
     } else {
