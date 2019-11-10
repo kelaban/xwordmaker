@@ -18,9 +18,9 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-export default function NewPuzzleForm({onSave, open, setOpen}) {
+export default function RebusForm({onSave, open, setOpen}) {
   const classes = useStyles();
-  const [values, setValues] = React.useState({rows: 15, cols: 15})
+  const [values, setValues] = React.useState('')
 
   const handleClose = (save) => () => {
     setOpen(false);
@@ -31,47 +31,29 @@ export default function NewPuzzleForm({onSave, open, setOpen}) {
 
   };
 
-  const handleChange = (dir) => (event) => {
-    setValues(Object.assign({}, values, {[dir]: +event.target.value || ''}))
+  const handleChange = (event) => {
+    setValues(event.target.value.toUpperCase())
   }
 
   return (
       <Dialog open={open} onClose={handleClose(false)}>
-        <DialogTitle>Create New Puzzle</DialogTitle>
+        <DialogTitle>Insert Rebus</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Create a new puzzle. Warning! This will destroy the current puzzle. Make sure to save first!
+            Add a rebus
           </DialogContentText>
           <TextField
-            label="Rows"
-            value={values.rows}
-            onChange={handleChange('rows')}
+            label="Text"
+            value={values}
+            onChange={handleChange}
             className={classes.textField}
-            type="number"
+            type="text"
             InputLabelProps={{
               shrink: true,
             }}
             margin="normal"
             variant="outlined"
             inputProps={{
-              min: 1,
-              max: 100
-            }}
-          />
-          <TextField
-            label="Columns"
-            value={values.cols}
-            onChange={handleChange('cols')}
-            className={classes.textField}
-            type="number"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            margin="normal"
-            variant="outlined"
-            inputProps={{
-              min: 1,
-              max: 100
             }}
           />
         </DialogContent>
@@ -80,7 +62,7 @@ export default function NewPuzzleForm({onSave, open, setOpen}) {
             Cancel
           </Button>
           <Button onClick={handleClose(true)} color="primary">
-            Create
+            Save
           </Button>
         </DialogActions>
       </Dialog>

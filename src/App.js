@@ -1,12 +1,13 @@
-import React, { useState, useReducer, useEffect, useCallback } from 'react';
+import React, { useState, useReducer, useEffect, useCallback, useRef } from 'react';
 import clsx from 'clsx';
 import './App.css';
 import XGrid from './XGrid'
 import Toolbar from './Toolbar'
 import WordList from './WordList'
-import KeyPressHandler from './KeyPressHandler'
+import KeyPressHandlerComponent, {KeyPressHandler} from './KeyPressHandler'
 import Clues from './Clues'
 import PrintView from './Print'
+import MenuActions from './MenuActions'
 import {
   isDirectionAcross,
   isBlockedSquare,
@@ -60,8 +61,6 @@ const useStyles = makeStyles(theme => ({
 
 
 
-
-
 function TabPanel(props) {
   const { children, value, index } = props;
 
@@ -75,7 +74,6 @@ function TabPanel(props) {
     {children}
   </div>
 }
-
 
 
 function calcCurrentWord({direction, grid, selected}) {
@@ -202,9 +200,11 @@ function App() {
   const [tabValue, handleTabChanged] = useState(0)
   const [motionState, dispatchMotionStateUpdate] = useReducer(reduceMotionState, {selected: null, currentWord: currentWordInitialState()})
   const [gridState, dispatchGridStateUpdate] = useReducer(reduceGridState, initialGridState)
+  const menuActionsRef = useRef()
   const {grid, history} = gridState
 
   const {selected, currentWord} = motionState
+
 
   const updateGridState = (nextState) => {
     if (nextState === UNDO_ACTION || nextState === REDO_ACTION) {
@@ -333,15 +333,27 @@ function App() {
   const clsGridPaper = clsx(classes.paper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
 
-  const kphProps = {
+  const keyPressHandler = new KeyPressHandler({
     selected,
     setSelected,
     setCurrentWord,
     currentWord,
     grid,
     updateGrid: updateGridState,
-    forwardRef: hotKeyRef,
-  }
+  })
+
+  const menuActionsComponent = (
+    <MenuActions
+      ref={menuActionsRef}
+      onSavePuzzle={handleSavePuzzle}
+      onImportPuzzle={handleImportPuzzle}
+      onCreateNewPuzzle={handleCreateNewPuzzle}
+      onUndo={() => dispatchGridStateUpdate({type: UNDO_ACTION})}
+      onRedo={() => dispatchGridStateUpdate({type: REDO_ACTION})}
+      onRebus={(letter) => keyPressHandler.handleLetter(letter)}
+    />
+  )
+
 
   useEffect(() => {
     const listener = (e) => setIsPrint(e.matches)
@@ -372,13 +384,13 @@ function App() {
   let gridComponent = null
 
   const _gridComponent = (
-    <KeyPressHandler {...kphProps}>
+    <KeyPressHandlerComponent keyPressHandler={keyPressHandler} forwardRef={hotKeyRef} extraActions={menuActionsRef.current}>
       <Paper className={clsGridPaper} >
         <ReactiveGrid>
           <XGrid grid={grid} selected={motionState.selected} currentWord={motionState.currentWord} onClick={setSelected} />
         </ReactiveGrid>
       </Paper>
-    </KeyPressHandler>
+    </KeyPressHandlerComponent>
   )
 
   if (separateGrid) {
@@ -398,11 +410,7 @@ function App() {
 
   return (
     <div className="App">
-      <Toolbar
-        handleSavePuzzle={handleSavePuzzle}
-        handleImportPuzzle={handleImportPuzzle}
-        handleCreateNewPuzzle={handleCreateNewPuzzle}
-      />
+      <Toolbar actions={menuActionsRef.current}/>
       <Container className={classes.container}>
         <Grid container spacing={2}>
         { separateGrid && (
@@ -415,6 +423,7 @@ function App() {
           </Grid>
         </Grid>
       </Container>
+      {menuActionsComponent}
     </div>
   );
 }

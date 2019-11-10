@@ -73,7 +73,7 @@ class Movement {
   }
 }
 
-class KeyPressHandler {
+export class KeyPressHandler {
   constructor(props) {
     this.selected = props.selected
     this.setSelected = props.setSelected
@@ -111,11 +111,20 @@ class KeyPressHandler {
     updateGrid(grid)
   }
 
+  // This function might get called from rebus without a real event
+  // if there is no "key" prop then assume the event is the letter
   handleLetter = (e) => {
-    let k = e.key.toUpperCase()
+    let k = e.toUpperCase()
+    if(e.key) {
+      k = e.key.toUpperCase()
+    }
     const {grid, selected, movement, updateGrid} = this
 
-    if(e.key === BLOCKED_SQUARE) {
+    if(!selected) {
+      return
+    }
+
+    if(k === BLOCKED_SQUARE) {
       grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = k
       this.setRotationalSymettry(k)
       movement.moveForward()
@@ -162,14 +171,6 @@ class KeyPressHandler {
     this.movement.down()
   }
 
-  handleUndo = () => {
-    this.updateGrid(UNDO_ACTION)
-  }
-
-  handleRedo = () => {
-    this.updateGrid(REDO_ACTION)
-  }
-
 }
 
 const MOVE_UP = 'MOVE_UP'
@@ -182,17 +183,6 @@ const SPACE = 'SPACE'
 const UNDO = 'UNDO'
 const REDO = 'REDO'
 
-const keyMap = {
-  [MOVE_UP]: 'up',
-  [MOVE_DOWN]: 'down',
-  [MOVE_LEFT]: 'left',
-  [MOVE_RIGHT]: 'right',
-  [ENTER_LETTER]: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.".split(''),
-  [BACKSPACE]: ['del', 'backspace'],
-  [SPACE]: 'space',
-  [UNDO]: 'mod+z',
-  [REDO]: 'mod+shift+z',
-}
 
 const useStyles = makeStyles(theme => ({
  noOutline: {
@@ -205,12 +195,20 @@ const useStyles = makeStyles(theme => ({
 
 export default function KeyPressHandlerComponent(props) {
   const classes = useStyles()
-
   const [hasFocus, setGridFocus] = useState(false)
+  const {extraActions, keyPressHandler: kph} = props
 
-  const kph = new KeyPressHandler(props)
+  let keyMap = {
+    [MOVE_UP]: 'up',
+    [MOVE_DOWN]: 'down',
+    [MOVE_LEFT]: 'left',
+    [MOVE_RIGHT]: 'right',
+    [ENTER_LETTER]: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split(''),
+    [BACKSPACE]: ['del', 'backspace'],
+    [SPACE]: 'space',
+  }
 
-  const handlers = {
+  let handlers = {
     [MOVE_UP]: kph.handleUp,
     [MOVE_DOWN]: kph.handleDown,
     [MOVE_LEFT]: kph.handleLeft,
@@ -218,8 +216,17 @@ export default function KeyPressHandlerComponent(props) {
     [ENTER_LETTER]: kph.handleLetter,
     [BACKSPACE]: kph.handleBackspace,
     [SPACE]: kph.handleSpace,
-    [UNDO]: kph.handleUndo,
-    [REDO]: kph.handleRedo,
+  }
+
+  if (extraActions) {
+    Object.keys(extraActions).forEach(k => {
+      keyMap[k] = extraActions[k].key
+      handlers[k] = (e) => {
+        extraActions[k].action()
+        // prevent browser form intercepting
+        return false
+      }
+    })
   }
 
   const handleFocus = _hasFocus => e => {
