@@ -4,9 +4,9 @@ import {
   REDO_ACTION,
   UPDATE_WORD_TO_CLUE,
   UPDATE_GRID,
-}  from './constants';
+}  from '../constants';
 
-import { coord2dTo1d, valFrom2d } from './helpers';
+import { coord2dTo1d, valFrom2d } from '../helpers';
 
 const MAX_HISTORY = 25
 
@@ -100,13 +100,21 @@ function reduceRedo(state, action) {
 }
 
 function reduceUpdateWordToClue(state, action) {
-  return {
-    ...state,
-    wordToClue:{
-      ...state.wordToClue,
-      ...action.payload,
-    }
+  const wordToClue = {
+    ...state.wordToClue,
+    ...action.payload,
   }
+
+  const ns = {
+    ...state,
+    grid: {
+      ...state.grid,
+      // Update clues in grid model when the clues change
+      ...calcNumbersAndAnswers(state.grid, wordToClue)
+    },
+    wordToClue
+  }
+  return ns
 }
 
 function reduceUpdateGrid(state, action) {

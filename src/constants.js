@@ -11,3 +11,8 @@ export const UNDO_ACTION = "UNDO"
 export const REDO_ACTION = "REDO"
 export const UPDATE_WORD_TO_CLUE = "UPDATE_WORD_TO_CLUE"
 export const UPDATE_GRID = "UPDATE_GRID"
+
+export const SET_CURRENT_WORD = "SET_CURRENT_WORD"
+export const SET_SELECTED_SQUARE = "SET_SELECTED_SQUARE"
+export const SET_CLUE_FOCUS = "SET_CLUE_FOCUS"
+

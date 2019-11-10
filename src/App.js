@@ -10,17 +10,18 @@ import PrintView from './Print'
 import {
   isDirectionAcross,
   isBlockedSquare,
-  DIRECTION_ACROSS,
-  DIRECTION_DOWN,
   UNDO_ACTION,
   REDO_ACTION,
   UPDATE_WORD_TO_CLUE,
   UPDATE_GRID,
+  SET_CURRENT_WORD,
+  SET_SELECTED_SQUARE,
+  SET_CLUE_FOCUS,
 }  from './constants';
 
 import { coord2dTo1d, valFrom2d } from './helpers';
-import { reduceGridState } from './reducers'
-
+import { reduceGridState } from './reducers/grid'
+import { reduceMotionState, currentWordInitialState } from './reducers/motion'
 
 
 import { saveAs } from 'file-saver';
@@ -166,7 +167,6 @@ function resetGridState(g) {
 
 const initialGridState = resetGridState()
 
-const currentWordInitialState = {word: "", direction: DIRECTION_ACROSS, coordinates: []}
 
 const gridRef = React.createRef();
 function ReactiveGrid({children}) {
@@ -200,7 +200,7 @@ function App() {
   const theme = useTheme()
   const [isPrint, setIsPrint] = useState(false)
   const [tabValue, handleTabChanged] = useState(0)
-  const [motionState, setMotionState] = useState({selected: null, currentWord: currentWordInitialState})
+  const [motionState, dispatchMotionStateUpdate] = useReducer(reduceMotionState, {selected: null, currentWord: currentWordInitialState()})
   const [gridState, dispatchGridStateUpdate] = useReducer(reduceGridState, initialGridState)
   const {grid, history} = gridState
 
@@ -217,31 +217,33 @@ function App() {
     }
   }
 
-  const updateWordToClue = (word, clue) => {
+  const updateWordToClue = useCallback((word, clue) => {
     dispatchGridStateUpdate({
       type: UPDATE_WORD_TO_CLUE,
       payload: {
         [word]: clue
       }
     })
-  }
+  }, [])
 
   const setCurrentWord = useCallback((currentWord) => {
-    setMotionState((prevState) => ({
-      ...prevState,
-      currentWord: {
-        ...prevState.currentWord,
-        ...currentWord
-      }
-    }))
+    dispatchMotionStateUpdate({
+      type: SET_CURRENT_WORD,
+      payload: currentWord
+    })
+  }, [])
+
+  const setSelected = useCallback((nextSelected) => {
+    dispatchMotionStateUpdate({
+      type: SET_SELECTED_SQUARE,
+      payload: nextSelected
+    })
   }, [])
 
   useEffect(() => {
     localStorage.setItem("grid", JSON.stringify(grid))
     localStorage.setItem("history", JSON.stringify(history))
-  },
-    [grid, history]
-  )
+  }, [grid, history])
 
   useEffect(() => {
     const nextCw = calcCurrentWord({selected, direction: currentWord.direction, grid})
@@ -249,23 +251,6 @@ function App() {
   }, [setCurrentWord, selected, grid, currentWord.direction])
 
 
-  const setSelected = (nextSelected) => {
-    let nextCurrentWord = motionState.currentWord
-
-    //swap direction if selected is double clicked
-    if(nextSelected && selected && nextSelected.row === selected.row && nextSelected.column === selected.column) {
-      nextCurrentWord = {
-        ...nextCurrentWord,
-        direction: currentWord.direction === DIRECTION_ACROSS ? DIRECTION_DOWN : DIRECTION_ACROSS
-      }
-    }
-
-    setMotionState({
-      ...motionState,
-      selected: nextSelected,
-      currentWord: nextCurrentWord
-    })
-  }
 
   const handleClueFocus = useCallback((direction, clueNum) => {
     let selected = {}
@@ -279,20 +264,18 @@ function App() {
         break;
       }
     }
-
-    setMotionState((prevState) => ({
-      ...prevState,
-      currentWord: {
-        ...currentWordInitialState,
+    dispatchMotionStateUpdate({
+      type: SET_CLUE_FOCUS,
+      payload: {
         direction,
-      },
-      selected,
-    }))
+        selected
+      }
+    })
   }, [grid])
 
   const handleClueChanged = useCallback((direction, word, clue) => {
     updateWordToClue(word, clue)
-  }, [])
+  }, [updateWordToClue])
 
   const handleSavePuzzle = () => {
     var blob = new Blob([JSON.stringify(grid)], {type: "text/plain;charset=utf-8"});
@@ -310,10 +293,13 @@ function App() {
     reader.onload = function(){
       let text = reader.result;
       const newGrid = JSON.parse(text)
-      dispatchGridStateUpdate({type: UPDATE_GRID, payload: {
-        grid: newGrid,
-        wordToClue: parseWordToClue(newGrid)
-      }})
+      dispatchGridStateUpdate({
+        type: UPDATE_GRID,
+        payload: {
+          grid: newGrid,
+          wordToClue: parseWordToClue(newGrid)
+        }
+      })
     };
 
     reader.readAsText(input.files[0]);
@@ -321,17 +307,26 @@ function App() {
   }
 
   const handleCreateNewPuzzle = (size) => {
-    dispatchGridStateUpdate({type: UPDATE_GRID, payload: resetGridState(makePuzzle(size))} )
+    dispatchGridStateUpdate({
+      type: UPDATE_GRID,
+      payload: resetGridState(makePuzzle(size))
+    })
     setSelected()
   }
 
   const handleWordListClicked = useCallback(word => {
     const gridCopy = cloneDeep(grid)
+
     currentWord.coordinates.forEach((coord, i) => {
       gridCopy.grid[coord2dTo1d(grid, coord[0], coord[1])] = word[i]
     })
+
     hotKeyRef.current.focus()
-    dispatchGridStateUpdate({type: UPDATE_GRID, payload: {grid: gridCopy}})
+
+    dispatchGridStateUpdate({
+      type: UPDATE_GRID,
+      payload: {grid: gridCopy}
+    })
   }, [grid, currentWord])
 
 
