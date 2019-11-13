@@ -114,9 +114,11 @@ export class KeyPressHandler {
   // This function might get called from rebus without a real event
   // if there is no "key" prop then assume the event is the letter
   handleLetter = (e) => {
-    let k = e.toUpperCase()
+    let k;
     if(e.key) {
       k = e.key.toUpperCase()
+    } else {
+      k = e.toUpperCase()
     }
     const {grid, selected, movement, updateGrid} = this
 
