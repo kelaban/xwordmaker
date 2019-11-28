@@ -17,7 +17,6 @@ export default function PrintView({grid}) {
   }
 
   const containerStyle = {
-    overflow: 'hidden',
     marginTop: 40,
     marginRight: 20,
     marginLeft: 20,
