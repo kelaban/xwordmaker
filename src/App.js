@@ -18,7 +18,7 @@ import {
   SET_CURRENT_WORD,
   SET_SELECTED_SQUARE,
   SET_CLUE_FOCUS,
-}  from './constants';
+} from './constants';
 
 import { coord2dTo1d, valFrom2d } from './helpers';
 import { reduceGridState } from './reducers/grid'
@@ -74,7 +74,6 @@ function TabPanel(props) {
     {children}
   </div>
 }
-
 
 function calcCurrentWord({direction, grid, selected}) {
     if (!selected) { return null }
@@ -329,6 +328,15 @@ function App() {
     })
   }, [grid, currentWord])
 
+  const handleCircleLogic = () => {
+    let selectedCell = valFrom2d(grid, selected.row, selected.column);
+    if (selectedCell === "") {
+    } else {
+      let circled = grid.circles[coord2dTo1d(grid, selected.row, selected.column)];
+      circled = 1 - circled
+      keyPressHandler.handleCircle(circled)
+    }
+  }
 
   const clsGridPaper = clsx(classes.paper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
@@ -351,6 +359,7 @@ function App() {
       onUndo={() => dispatchGridStateUpdate({type: UNDO_ACTION})}
       onRedo={() => dispatchGridStateUpdate({type: REDO_ACTION})}
       onRebus={(letter) => keyPressHandler.handleLetter(letter)}
+      onCircle={handleCircleLogic}
     />
   )
 

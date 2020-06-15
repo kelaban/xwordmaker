@@ -150,6 +150,18 @@ export class KeyPressHandler {
     }
   }
 
+  handleCircle = (k) => {
+    const {grid, selected, movement, updateGrid} = this
+
+    if(!selected) {
+      return
+    }
+
+    grid.circles[coord2dTo1d(grid, selected.row, selected.column)] = k
+    movement.moveForward()
+    updateGrid(grid)
+  }
+
   handleSpace = (e) => {
     const {setCurrentWord, currentWord} = this
     setCurrentWord(Object.assign({}, currentWord, {
