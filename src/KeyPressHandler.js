@@ -105,7 +105,9 @@ export class KeyPressHandler {
       this.setRotationalSymettry('')
     }
 
-    grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = ''
+    let oneD = coord2dTo1d(grid, selected.row, selected.column)
+    grid.grid[oneD] = ''
+    grid.circles[oneD] = 0
 
     movement.moveBack()
     updateGrid(grid)
