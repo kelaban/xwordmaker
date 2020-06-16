@@ -21,7 +21,10 @@ export default function Grid({grid, selected, currentWord, hideAnswers, onClick}
           classNames.push("Grid-item-highlight")
         }
         if (!!grid.circles[i]) {
-          spanClassNames.push("Circled")
+          spanClassNames.push("Grid-item-circled")
+        }
+        if (typeof grid.darkens !== "undefined" && !!grid.darkens[i]) {
+          classNames.push("Grid-item-darkened")
         }
         const cn = classNames.join(" ")
         const scn = spanClassNames.join(" ")

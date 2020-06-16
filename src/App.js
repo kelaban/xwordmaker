@@ -129,8 +129,10 @@ const makePuzzle = (size) => {
     grid: [...Array(g.size.rows*g.size.cols).keys()].map(v => ""),
     // 0 means no number
     gridnums: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
-    // TODO: 0 means circle 1 means circle
+    // 0 means no-circle 1 means circle
     circles: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
+    // 0 means no-gray 1 means gray
+    darkens: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
   })
 }
 
@@ -338,6 +340,14 @@ function App() {
     }
   }
 
+  const handleDarkenLogic = () => {
+    if (typeof grid.darkens !== "undefined") { // Handle backwards compatibility
+      let darken = grid.darkens[coord2dTo1d(grid, selected.row, selected.column)];
+      darken = 1 - darken
+      keyPressHandler.handleDarken(darken)
+    }
+  }
+
   const clsGridPaper = clsx(classes.paper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
 
@@ -360,6 +370,7 @@ function App() {
       onRedo={() => dispatchGridStateUpdate({type: REDO_ACTION})}
       onRebus={(letter) => keyPressHandler.handleLetter(letter)}
       onCircle={handleCircleLogic}
+      onDarken={handleDarkenLogic}
     />
   )
 

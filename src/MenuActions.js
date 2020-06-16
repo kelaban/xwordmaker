@@ -15,6 +15,7 @@ export default forwardRef(function MenuActions(props, ref) {
     onRedo,
     onRebus,
     onCircle,
+    onDarken,
   } = props
 
   const [openNewForm, setOpenNewForm] = React.useState(false);
@@ -63,6 +64,10 @@ export default forwardRef(function MenuActions(props, ref) {
     handleInsertCircledLetter: {
       key: 'mod+c',
       action: () => onCircle()
+    },
+    handleDarkenCell: {
+      key: 'mod+b',
+      action: () => onDarken()
     },
   }))
 

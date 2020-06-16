@@ -59,6 +59,11 @@ export default memo(function Clues({grid, currentWord, onClueFocus, onClueChange
       onClueChanged(dir, word, e.target.value)
     }
 
+    const count = (dir) => {
+        const d = dir.toLowerCase()
+        return grid.clues[d].length
+    }
+
     const mapClues = (dir) => {
       const d = dir.toLowerCase()
       return grid.clues[d].map((clue, i) => {
@@ -77,6 +82,7 @@ export default memo(function Clues({grid, currentWord, onClueFocus, onClueChange
 
     const across = mapClues(DIRECTION_ACROSS)
     const down = mapClues(DIRECTION_DOWN)
+    const totalCount = count(DIRECTION_ACROSS) + count(DIRECTION_DOWN)
     return (
       <div>
         <Grid container spacing={1}>
@@ -89,6 +95,7 @@ export default memo(function Clues({grid, currentWord, onClueFocus, onClueChange
               {down}
           </Grid>
         </Grid>
+        <Typography>Total: {totalCount}</Typography>
       </div>
     )
   })
