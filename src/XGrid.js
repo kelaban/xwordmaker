@@ -12,6 +12,7 @@ export default function Grid({grid, selected, currentWord, hideAnswers, onClick}
         const val =  grid.grid[i]
         const isSelected = selected && selected.row === row && selected.column === column
         let classNames = ["Grid-item"]
+        let spanClassNames = []
         if(isSelected) {
           classNames.push("Grid-item-selected")
         } else if (isBlockedSquare(val)) {
@@ -19,7 +20,14 @@ export default function Grid({grid, selected, currentWord, hideAnswers, onClick}
         } else if (currentWord && currentWord.coordinates.some(i => i[0] === row && i[1] === column)) {
           classNames.push("Grid-item-highlight")
         }
+        if (!!grid.circles[i]) {
+          spanClassNames.push("Grid-item-circled")
+        }
+        if (typeof grid.darkens !== "undefined" && !!grid.darkens[i]) {
+          classNames.push("Grid-item-darkened")
+        }
         const cn = classNames.join(" ")
+        const scn = spanClassNames.join(" ")
         const style = {
           fontSize: `${(1/(val.length))*1.1}em`
         }
@@ -27,7 +35,7 @@ export default function Grid({grid, selected, currentWord, hideAnswers, onClick}
         return (
           <div key={i} className={cn} onClick={() => onClick({row, column})}>
             <span className="Grid-number">{grid.gridnums[i] > 0 ? grid.gridnums[i] : ''}</span>
-            <span style={style}>{hideAnswers ? ' ' : val}</span>
+            <span className={scn} style={style}>{hideAnswers ? ' ' : val}</span>
           </div>
         )
       })

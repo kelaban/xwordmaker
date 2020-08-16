@@ -18,7 +18,7 @@ import {
   SET_CURRENT_WORD,
   SET_SELECTED_SQUARE,
   SET_CLUE_FOCUS,
-}  from './constants';
+} from './constants';
 
 import { coord2dTo1d, valFrom2d } from './helpers';
 import { reduceGridState } from './reducers/grid'
@@ -75,7 +75,6 @@ function TabPanel(props) {
   </div>
 }
 
-
 function calcCurrentWord({direction, grid, selected}) {
     if (!selected) { return null }
 
@@ -130,8 +129,10 @@ const makePuzzle = (size) => {
     grid: [...Array(g.size.rows*g.size.cols).keys()].map(v => ""),
     // 0 means no number
     gridnums: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
-    // TODO: 0 means circle 1 means circle
+    // 0 means no-circle 1 means circle
     circles: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
+    // 0 means no-gray 1 means gray
+    darkens: [...Array(g.size.rows*g.size.cols).keys()].map(v => 0),
   })
 }
 
@@ -329,6 +330,23 @@ function App() {
     })
   }, [grid, currentWord])
 
+  const handleCircleLogic = () => {
+    let selectedCell = valFrom2d(grid, selected.row, selected.column);
+    if (selectedCell === "") {
+    } else {
+      let circled = grid.circles[coord2dTo1d(grid, selected.row, selected.column)];
+      circled = 1 - circled
+      keyPressHandler.handleCircle(circled)
+    }
+  }
+
+  const handleDarkenLogic = () => {
+    if (typeof grid.darkens !== "undefined") { // Handle backwards compatibility
+      let darken = grid.darkens[coord2dTo1d(grid, selected.row, selected.column)];
+      darken = 1 - darken
+      keyPressHandler.handleDarken(darken)
+    }
+  }
 
   const clsGridPaper = clsx(classes.paper)
   const clsScrollPaper = clsx(classes.paper, classes.scroll)
@@ -351,6 +369,8 @@ function App() {
       onUndo={() => dispatchGridStateUpdate({type: UNDO_ACTION})}
       onRedo={() => dispatchGridStateUpdate({type: REDO_ACTION})}
       onRebus={(letter) => keyPressHandler.handleLetter(letter)}
+      onCircle={handleCircleLogic}
+      onDarken={handleDarkenLogic}
     />
   )
 

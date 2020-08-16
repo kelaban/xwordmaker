@@ -105,7 +105,9 @@ export class KeyPressHandler {
       this.setRotationalSymettry('')
     }
 
-    grid.grid[coord2dTo1d(grid, selected.row, selected.column)] = ''
+    let oneD = coord2dTo1d(grid, selected.row, selected.column)
+    grid.grid[oneD] = ''
+    grid.circles[oneD] = 0
 
     movement.moveBack()
     updateGrid(grid)
@@ -148,6 +150,30 @@ export class KeyPressHandler {
       movement.moveForward()
       updateGrid(grid)
     }
+  }
+
+  handleCircle = (k) => {
+    const {grid, selected, movement, updateGrid} = this
+
+    if(!selected) {
+      return
+    }
+
+    grid.circles[coord2dTo1d(grid, selected.row, selected.column)] = k
+    movement.moveForward()
+    updateGrid(grid)
+  }
+
+  handleDarken = (k) => {
+    const {grid, selected, movement, updateGrid} = this
+
+    if(!selected) {
+      return
+    }
+
+    grid.darkens[coord2dTo1d(grid, selected.row, selected.column)] = k
+    movement.moveForward()
+    updateGrid(grid)
   }
 
   handleSpace = (e) => {

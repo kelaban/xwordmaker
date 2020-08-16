@@ -5,7 +5,7 @@ import RebusForm from './RebusForm'
 import {BLOCKED_SQUARE} from './constants'
 
 // A hack to get a bunch of dom state into the UI
-// and manage button clicks for menu Actino items and hotkeys
+// and manage button clicks for menu Action items and hotkeys
 export default forwardRef(function MenuActions(props, ref) {
   const {
     onSavePuzzle,
@@ -13,7 +13,9 @@ export default forwardRef(function MenuActions(props, ref) {
     onCreateNewPuzzle,
     onUndo,
     onRedo,
-    onRebus
+    onRebus,
+    onCircle,
+    onDarken,
   } = props
 
   const [openNewForm, setOpenNewForm] = React.useState(false);
@@ -58,7 +60,15 @@ export default forwardRef(function MenuActions(props, ref) {
     handleInsertBlockedSquare: {
       key: BLOCKED_SQUARE,
       action: () => onRebus(BLOCKED_SQUARE)
-    }
+    },
+    handleInsertCircledLetter: {
+      key: 'mod+c',
+      action: () => onCircle()
+    },
+    handleDarkenCell: {
+      key: 'mod+b',
+      action: () => onDarken()
+    },
   }))
 
   return (
