@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/xwordmaker/static/css/main.85897755.chunk.css",
+    "main.js": "/xwordmaker/static/js/main.96c19d5c.chunk.js",
+    "main.js.map": "/xwordmaker/static/js/main.96c19d5c.chunk.js.map",
+    "runtime-main.js": "/xwordmaker/static/js/runtime-main.e4fdeecd.js",
+    "runtime-main.js.map": "/xwordmaker/static/js/runtime-main.e4fdeecd.js.map",
+    "static/js/2.e55a3d32.chunk.js": "/xwordmaker/static/js/2.e55a3d32.chunk.js",
+    "static/js/2.e55a3d32.chunk.js.map": "/xwordmaker/static/js/2.e55a3d32.chunk.js.map",
+    "index.html": "/xwordmaker/index.html",
+    "precache-manifest.b2b5d20a22a74c5262e410327e01c55f.js": "/xwordmaker/precache-manifest.b2b5d20a22a74c5262e410327e01c55f.js",
+    "service-worker.js": "/xwordmaker/service-worker.js",
+    "static/css/main.85897755.chunk.css.map": "/xwordmaker/static/css/main.85897755.chunk.css.map"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.e4fdeecd.js",
+    "static/js/2.e55a3d32.chunk.js",
+    "static/css/main.85897755.chunk.css",
+    "static/js/main.96c19d5c.chunk.js"
+  ]
+}
